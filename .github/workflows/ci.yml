@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # weekly Monday 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Pike
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pike8.0
+
+      - name: Run tests (dot reporter)
+        run: pike -M . run_tests.pike tests/
+
+      - name: Run tests (verbose reporter)
+        run: pike -M . run_tests.pike -v tests/
+
+      - name: Run tests (TAP reporter)
+        run: pike -M . run_tests.pike --tap tests/
+
+      - name: Run tests (JUnit XML reporter)
+        run: pike -M . run_tests.pike --junit=junit-report.xml tests/
+
+      - name: Run with --strict
+        run: pike -M . run_tests.pike --strict tests/
+
+      - name: List tests
+        run: pike -M . run_tests.pike --list=verbose tests/
+
+      - name: Upload JUnit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: junit-report.xml

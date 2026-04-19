@@ -1,0 +1,4 @@
+*.o
+*.pmod.bak
+*.pike.bak
+junit-report.xml
