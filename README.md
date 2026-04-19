@@ -1,3 +1,9 @@
+
+[![CI](https://github.com/TheSmuks/punit/actions/workflows/ci.yml/badge.svg)](https://github.com/TheSmuks/punit/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/tag/TheSmuks/punit?label=release)](https://github.com/TheSmuks/punit/releases/latest)
+[![License](https://img.shields.io/github/license/TheSmuks/punit)](LICENSE)
+[![Pike](https://img.shields.io/badge/Pike-8.0-blue)](https://pike.lysator.liu.se/)
+
 # PUnit
 
 JUnit-inspired testing framework for Pike. Provides structured test discovery, rich assertions, parameterized tests, tag-based filtering, and multiple output formats.
