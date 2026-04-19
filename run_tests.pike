@@ -54,6 +54,9 @@ int main(int argc, array(string) argv) {
       options->strict = 1;
     } else if (arg == "--tap") {
       options->tap = 1;
+    } else if (arg == "--version") {
+      write("PUnit " + PUnit.version + "\n");
+      return 0;
     } else if (arg == "--help" || arg == "-h") {
       _usage();
       return 0;
@@ -87,6 +90,7 @@ void _usage() {
         "  --no-color             Disable ANSI colors\n"
         "  --junit=FILE           Write JUnit XML report to FILE\n"
         "  --tap                  Output TAP v13 to stdout\n"
+        "  --version              Show version and exit\n"
         "  -h, --help             Show this help\n"
         "\n"
         "Exit code: 0 if all pass, 1 if any failure.\n");

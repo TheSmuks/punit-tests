@@ -15,3 +15,4 @@
 // works. In Pike, inherit on a .pmod pulls in its symbols
 // as module-level identifiers visible to importers.
 inherit .Assertions;
+inherit .Version;

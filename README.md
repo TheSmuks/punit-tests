@@ -1,8 +1,9 @@
 
-[![CI](https://github.com/TheSmuks/punit/actions/workflows/ci.yml/badge.svg)](https://github.com/TheSmuks/punit/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/tag/TheSmuks/punit?label=release)](https://github.com/TheSmuks/punit/releases/latest)
-[![License](https://img.shields.io/github/license/TheSmuks/punit)](LICENSE)
+[![CI](https://github.com/TheSmuks/punit-tests/actions/workflows/ci.yml/badge.svg)](https://github.com/TheSmuks/punit-tests/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/tag/TheSmuks/punit-tests?label=release)](https://github.com/TheSmuks/punit-tests/releases/latest)
+[![License](https://img.shields.io/github/license/TheSmuks/punit-tests)](LICENSE)
 [![Pike](https://img.shields.io/badge/Pike-8.0-blue)](https://pike.lysator.liu.se/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 # PUnit
 
