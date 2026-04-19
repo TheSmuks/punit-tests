@@ -2,3 +2,6 @@
 *.pmod.bak
 *.pike.bak
 junit-report.xml
+
+.pike-env/
+modules/
