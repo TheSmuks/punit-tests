@@ -106,6 +106,21 @@ All reporters inherit `Reporter.pike` and implement:
 - Arrays: `({})`, mappings: `([])`, multisets: `(<>)`.
 - `sprintf("%O", val)` for debug output, `sprintf("%q", str)` for quoted strings.
 
+## Test timeout (TestSuite.pike)
+
+- `_timeout` field set via `create()`, defaults to 0 (disabled)
+- `_invoke_test()` wrapped in `Thread.Thread` + mutex/condition polling
+- Parent polls every 20ms; on timeout, reports error "Test timed out after Ns"
+- Thread-based approach is used because Pike cannot kill running threads
+
+## Randomized test ordering (TestSuite.pike)
+
+- `_randomize` and `_seed` fields set via `create()`
+- Fisher-Yates shuffle in `_discover_test_methods()` after `sort(result)`
+- Uses a deterministic LCG PRNG (`_prng_state`) for reproducibility (Pike's `random_seed` is not deterministic across processes)
+- TestRunner initializes seed once and logs it to stderr via `werror()`
+- Seed is shared across all suites in a run
+
 ## Verification checklist
 
 After any framework change:
@@ -126,6 +141,12 @@ pike -M . run_tests.pike --strict tests/
 
 # Listing
 pike -M . run_tests.pike --list=verbose tests/
+
+# Timeout
+pike -M . run_tests.pike --timeout=2 tests/
+
+# Randomized order (reproducible)
+pike -M . run_tests.pike --randomize --seed=42 tests/
 ```
 
-Expected: 28 passed, 1 skipped, exit code 0 on all commands.
+Expected: 35 passed, 1 skipped, exit code 0 on all commands.

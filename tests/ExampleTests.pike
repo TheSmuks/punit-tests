@@ -18,6 +18,8 @@ constant test_tags = ([
   "test_approx_equal": ({"math"}),
   "test_skipped": ({"slow"}),
   "test_param_add": ({"math", "param"}),
+  "test_same_identity": ({"core"}),
+  "test_not_same_identity": ({"core"}),
 ]);
 
 protected object calc;
@@ -100,6 +102,23 @@ void test_skipped() {
 void test_no_throw() {
   mixed result = assert_no_throw(lambda() { return 42; });
   assert_equal(42, result);
+}
+
+void test_same_identity() {
+  array a = ({1, 2, 3});
+  assert_same(a, a);  // Same object
+
+  // Different objects with same content should NOT be same
+  array b = ({1, 2, 3});
+  assert_not_same(a, b);
+  assert_equal(a, b);  // But structurally equal
+}
+
+void test_not_same_identity() {
+  // Use arrays for a clear identity test (strings may be interned)
+  array a1 = ({1});
+  array a2 = ({1});
+  assert_not_same(a1, a2);
 }
 
 void test_type_checks() {

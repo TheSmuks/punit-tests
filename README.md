@@ -55,8 +55,10 @@ Results: 2 passed (0.0ms)
 
 | Assertion | Description |
 |---|---|
-| `assert_equal(expected, actual)` | Strict equality |
+| `assert_equal(expected, actual)` | Structural equality (with diff for arrays/mappings) |
 | `assert_not_equal(expected, actual)` | Inequality |
+| `assert_same(expected, actual)` | Identity check (same object) |
+| `assert_not_same(expected, actual)` | Different identity |
 | `assert_true(val)` / `assert_false(val)` | Boolean check |
 | `assert_null(val)` / `assert_not_null(val)` | Zero check |
 | `assert_undefined(val)` | UNDEFINED check |
@@ -156,24 +158,43 @@ Skipped tests are reported separately and do not count as failures.
 
 ### Test Fixtures
 
-Override `setup()` and `teardown()` in your test class:
+Override lifecycle hooks in your test class. All four are optional:
+
+| Hook | Scope | When it runs |
+|---|---|---|
+| `setup_class()` | Once per class | Before any test method in the class |
+| `teardown_class()` | Once per class | After all test methods in the class |
+| `setup()` | Per test | Before each test method |
+| `teardown()` | Per test | After each test method (even on failure) |
 
 ```pike
 inherit PUnit.TestCase;
 
 protected object db;
 
-void setup() {
+void setup_class() {
+  // Expensive one-time setup: open database connection
   db = Database.Connection("test://localhost");
 }
 
-void teardown() {
+void teardown_class() {
+  // One-time cleanup
   db->close();
   db = 0;
 }
+
+void setup() {
+  // Per-test setup: reset state before each test
+  db->execute("BEGIN");
+}
+
+void teardown() {
+  // Per-test cleanup: runs even if setup or the test threw
+  db->execute("ROLLBACK");
+}
 ```
 
-`setup()` runs before each test method. `teardown()` runs after each test method, even if the test or setup failed.
+`setup_class()` and `teardown_class()` run once for the entire class. `setup()` and `teardown()` run around each individual test method.
 
 ### Listing and Validation
 
@@ -251,6 +272,30 @@ pike -M . run_tests.pike --junit=report.xml tests/
 
 Writes a JUnit-compatible XML report suitable for CI systems.
 
+### Test Timeout
+
+Set a per-test timeout to prevent hanging tests from blocking CI:
+
+```bash
+pike -M . run_tests.pike --timeout=10 tests/
+```
+
+Each test method gets N seconds to complete. Timed-out tests are reported as errors with the message "Test timed out after Ns". Without `--timeout`, tests run without a time limit.
+
+### Randomized Test Order
+
+Run tests in random order to detect hidden inter-test dependencies:
+
+```bash
+# Random order (auto-generated seed printed to stderr)
+pike -M . run_tests.pike --randomize tests/
+
+# Reproducible random order
+pike -M . run_tests.pike --randomize --seed=42 tests/
+```
+
+The seed is printed to stderr so you can reproduce failures. Without `--seed`, a seed is generated from the current time.
+
 ## CLI Reference
 
 ```
@@ -266,6 +311,9 @@ Options:
   --list=verbose         List test names with tags
   --strict               Treat validation warnings as errors
   --no-color             Disable ANSI colors
+  --timeout=N            Per-test timeout in seconds
+  --randomize            Run tests in random order
+  --seed=N               Random seed for --randomize (reproducible)
   --junit=FILE           Write JUnit XML report to FILE
   --tap                  Output TAP v13 to stdout
   -h, --help             Show this help

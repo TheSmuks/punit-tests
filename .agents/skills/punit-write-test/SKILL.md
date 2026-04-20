@@ -54,7 +54,16 @@ assert_equal(expected, actual);
 assert_not_equal(expected, actual);
 ```
 
-Uses Pike's `equal()` -- works for arrays, mappings, multisets, and objects implementing `_equal()`.
+Uses Pike's `equal()` -- works for arrays, mappings, multisets, and objects implementing `_equal()`. Complex structures (arrays/mappings) produce element-by-element diff on failure.
+
+### Identity
+
+```pike
+assert_same(obj_a, obj_b);      // must be the same object
+assert_not_same(obj_a, obj_b);  // must be different objects
+```
+
+Checks object identity (same reference), not structural equality.
 
 ### Boolean and null
 

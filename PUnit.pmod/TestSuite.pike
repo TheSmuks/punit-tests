@@ -23,13 +23,20 @@ protected array(string) _exclude_tags = ({});
 protected string _method_filter;
 protected int _stop_on_failure;
 protected int _strict;
+protected int _timeout = 0;
+protected int _randomize = 0;
+protected int _seed = 0;
+protected int _prng_state = 0;
 protected array(string) _validation_warnings = ({});
 void create(string name, object rep,
           void|array(string) inc_tags,
           void|array(string) exc_tags,
           void|string meth_filter,
           void|int stop,
-          void|int strict) {
+          void|int strict,
+          void|int timeout,
+          void|int randomize,
+          void|int seed) {
   _suite_name = name;
   _reporter = rep;
   _include_tags = inc_tags || ({});
@@ -37,6 +44,10 @@ void create(string name, object rep,
   _method_filter = meth_filter;
   _stop_on_failure = stop;
   _strict = strict || 0;
+  _timeout = timeout || 0;
+  _randomize = randomize || 0;
+  _seed = seed || 0;
+  _prng_state = _seed;
 }
 
 //! Add a compiled class to the suite.
@@ -239,7 +250,21 @@ protected array(string) _discover_test_methods(object obj) {
   }
 
   // Sort for deterministic order
-  return sort(result);
+  result = sort(result);
+
+  // Shuffle if randomized ordering requested
+  if (_randomize) {
+    // Fisher-Yates shuffle using deterministic PRNG
+    for (int i = sizeof(result) - 1; i > 0; i--) {
+      _prng_state = (_prng_state * 1103515245 + 12345) & 0x7fffffff;
+      int j = _prng_state % (i + 1);
+      mixed tmp = result[i];
+      result[i] = result[j];
+      result[j] = tmp;
+    }
+  }
+
+  return result;
 }
 
 //! Check if a test method should run based on tags, filters, and skips.
@@ -340,16 +365,54 @@ protected void _run_class(mapping cls, Results results) {
     }
 
     if (setup_ok) {
-      // Run the test
-      if (mixed e = catch {
-        _invoke_test(instance, method, cls->test_data);
-      }) {
-        // Test threw — determine if it's an assertion failure or error
-        string msg = _format_error(e);
-        string loc = _extract_location(e);
-        float elapsed = (gethrtime() / 1000.0) - start;
+      // Run the test, with optional timeout
+      mixed test_error;
+      int timed_out = 0;
 
-        if (_is_assertion_error(e)) {
+      if (_timeout > 0) {
+        // Thread-based timeout: run test in a thread, poll for completion
+        Thread.Mutex done_mtx = Thread.Mutex();
+        int test_done = 0;
+
+        Thread.Thread test_thread = Thread.Thread(lambda() {
+          mixed err = catch { _invoke_test(instance, method, cls->test_data); };
+          Thread.MutexKey key = done_mtx->lock();
+          test_error = err;
+          test_done = 1;
+          destruct(key);
+        });
+
+        float deadline = gethrtime() / 1000.0 + (float)_timeout * 1000.0;
+        while (1) {
+          Thread.MutexKey key = done_mtx->lock();
+          if (test_done) { destruct(key); break; }
+          destruct(key);
+          if (gethrtime() / 1000.0 >= deadline) {
+            timed_out = 1;
+            break;
+          }
+          sleep(0.02);
+        }
+      } else {
+        // No timeout — run synchronously
+        test_error = catch { _invoke_test(instance, method, cls->test_data); };
+      }
+
+      float elapsed = (gethrtime() / 1000.0) - start;
+
+      if (timed_out) {
+        // Timed out — report as error
+        string msg = sprintf("Test timed out after %ds", _timeout);
+        tr->set_error(elapsed, msg, "");
+        results->errors++;
+        results->test_results += ({ tr });
+        _reporter->test_error(class_name + "::" + method, elapsed, msg, "");
+      } else if (test_error) {
+        // Test threw — determine if it's an assertion failure or error
+        string msg = _format_error(test_error);
+        string loc = _extract_location(test_error);
+
+        if (_is_assertion_error(test_error)) {
           tr->set_failed(elapsed, msg, loc);
           results->failed++;
           results->test_results += ({ tr });
@@ -363,7 +426,6 @@ protected void _run_class(mapping cls, Results results) {
                                 elapsed, msg, loc);
         }
       } else {
-        float elapsed = (gethrtime() / 1000.0) - start;
         tr->set_passed(elapsed);
         results->passed++;
         results->test_results += ({ tr });

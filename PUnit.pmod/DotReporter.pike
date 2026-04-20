@@ -15,8 +15,16 @@ protected int error_count = 0;
 protected int skip_count = 0;
 protected int pass_count = 0;
 
+protected void _maybe_print_progress() {
+  int completed = pass_count + fail_count + error_count + skip_count;
+  if (completed > 0 && completed % 50 == 0 && total_tests > 0) {
+    write(sprintf(" [%d/%d] ", completed, total_tests));
+  }
+}
+protected int total_tests = 0;
+
 void suite_started(string suite_name, int num_tests) {
-  // Nothing for dot reporter
+  total_tests += num_tests;
 }
 
 void test_started(string test_name) {
@@ -26,6 +34,7 @@ void test_started(string test_name) {
 void test_passed(string test_name, float elapsed_ms) {
   pass_count++;
   write(green("."));
+  _maybe_print_progress();
 }
 
 void test_failed(string test_name, float elapsed_ms,
@@ -34,6 +43,7 @@ void test_failed(string test_name, float elapsed_ms,
   failures += ({ (["test_name": test_name, "message": message,
                    "location": location, "type": "fail"]) });
   write(red("F"));
+  _maybe_print_progress();
 }
 
 void test_error(string test_name, float elapsed_ms,
@@ -42,11 +52,13 @@ void test_error(string test_name, float elapsed_ms,
   errors += ({ (["test_name": test_name, "message": message,
                  "location": location, "type": "error"]) });
   write(red("E"));
+  _maybe_print_progress();
 }
 
 void test_skipped(string test_name, void|string reason) {
   skip_count++;
   write(yellow("S"));
+  _maybe_print_progress();
 }
 
 void suite_finished(int passed, int failed, int errors,
