@@ -31,14 +31,17 @@ Format: `MAJOR.MINOR.PATCH` (e.g., `1.2.3`)
 For every release:
 
 1. **Bump version** in `PUnit.pmod/Version.pmod` (`constant version = "x.y.z";`).
-2. **Commit** with message: `Bump version to x.y.z`.
-3. **Verify**: `pike -M . run_tests.pike tests/` passes.
-4. **Push** to `main`.
-5. **Create annotated tag**: `git tag -a vx.y.z -m "vx.y.z: brief summary"`.
-6. **Push tag**: `git push origin vx.y.z`.
-7. **Create GitHub Release** from the tag with a changelog sectioned by feature area.
+2. **Update CHANGELOG.md** — move relevant items from `[Unreleased]` to a new version section.
+3. **Commit** with message: `Bump version to x.y.z`.
+4. **Verify**: `pike -M . run_tests.pike tests/` passes.
+5. **Push** to `main`.
+6. **Create annotated tag**: `git tag -a vx.y.z -m "vx.y.z: brief summary"`.
+7. **Push tag**: `git push origin vx.y.z`.
+8. **Create GitHub Release** from the tag with a changelog sectioned by feature area.
 
 ## Changelog Format
+
+The canonical changelog is `CHANGELOG.md` (Keep a Changelog format). The GitHub release body should mirror the relevant version section from `CHANGELOG.md`.
 
 Use this structure in the GitHub release body:
 

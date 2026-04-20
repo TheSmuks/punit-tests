@@ -81,6 +81,29 @@ Expected result: 41 passed, 3 skipped, exit code 0.
 - Do NOT use `@deprecated` unless actually deprecating.
 - Doc blocks go immediately before the declaration (no blank line between `//!` and code).
 
+## Commit conventions
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/) 1.0.0:
+
+```
+<type>(<scope>): <description>
+```
+
+Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `perf`, `style`, `revert`
+
+Scopes: `assert`, `runner`, `suite`, `reporter`, `lifecycle`, `error`
+
+## Pre-commit doc checklist
+
+| Source file changed | Must also update |
+|---|---|
+| `PUnit.pmod/*.pike` / `*.pmod` / `*.h` | `CHANGELOG.md`, `ARCHITECTURE.md` |
+| `tests/*.pike` (count changes) | `CHANGELOG.md`, `AGENTS.md` (baseline) |
+| `run_tests.pike` (new flags) | `ARCHITECTURE.md`, `AGENTS.md` |
+| Any source file | `CHANGELOG.md` ([Unreleased]) |
+
+Doc-only changes do NOT trigger this checklist.
+
 ## PR instructions
 
 - Title format: descriptive summary of the change

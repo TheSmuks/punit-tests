@@ -54,7 +54,7 @@ tests/
   Fixtures/
     DatabaseFixture.pike
 pike.json                   Package manifest (name, version, description)
-.version                    Version file (v1.0.0)
+.version                    Version file (v1.1.0)
 AGENTS.md                   Agent context file
 .github/workflows/ci.yml    GitHub Actions CI (7-step matrix)
 ```
@@ -238,6 +238,18 @@ pike -M . run_tests.pike tests/ --timeout=30 --randomize --seed=42
 ### Expected Baseline
 
 41 passed, 3 skipped, exit code 0.
+
+### Commit Conventions
+
+This project follows [Conventional Commits](https://www.conventionalcommits.org/) 1.0.0:
+
+```
+<type>(<scope>): <description>
+```
+
+Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `ci`, `perf`, `style`, `revert`
+
+Scopes: `assert`, `runner`, `suite`, `reporter`, `lifecycle`, `error`
 
 ## Glossary
 
