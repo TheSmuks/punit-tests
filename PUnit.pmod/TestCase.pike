@@ -22,7 +22,11 @@
 //!    Optional constant: @expr{(< "test_broken_thing" >)@}
 //!  @item skip_all
 //!    Optional constant: @expr{true@} to skip the entire class.
+//!  @item skip_reasons
+//!    Optional constant: @expr{([ "test_xxx": "reason string" ])@}
 //! @enddefines
+//!
+//! @seealso TestSuite, Assertions
 
 class TestCase {
   //! Called once before all test methods in this class.

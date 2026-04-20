@@ -29,3 +29,4 @@
 #include <PUnit.pmod/membership.h>
 #include <PUnit.pmod/exception.h>
 #include <PUnit.pmod/misc.h>
+#include <PUnit.pmod/collection.h>

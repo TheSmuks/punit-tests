@@ -94,7 +94,7 @@ void test_approx_equal() {
 }
 
 // Skipped test
-constant skip_tests = (< "test_skipped" >);
+constant skip_tests = (< "test_skipped", "test_skip_with_static_reason" >);
 void test_skipped() {
   assert_fail("This should not run");
 }
@@ -127,6 +127,19 @@ void test_type_checks() {
   assert_type("array", ({1, 2, 3}));
 }
 
+
+void test_throws_message_substring() {
+  mixed err = assert_throws_message(UNDEFINED, "Division",
+    lambda() { error("Division by zero\n"); });
+  assert_not_equal(0, err);
+}
+
+void test_throws_message_regex() {
+  mixed err = assert_throws_message(UNDEFINED, "Division.*zero",
+    lambda() { error("Division by zero occurred\n"); }, 1);
+  assert_not_equal(0, err);
+}
+
 // ── Parameterized tests ───────────────────────────────────────────────
 
 // test_data maps method names to arrays of row data. Each row is passed
@@ -151,5 +164,40 @@ void test_param_add(mapping p) {
 // explicit test_tags entries.
 void test_inline_tagged__core__fast() {
   // Auto-tagged as {"core", "fast"}
+  assert_true(1);
+}
+
+
+void test_assert_each() {
+  assert_each(({2, 4, 6, 8}), lambda(mixed x) { return x % 2 == 0; });
+}
+
+void test_assert_contains_only() {
+  assert_contains_only(({1, 2, 3}), ({1, 2, 3, 2, 1}));
+}
+
+void test_assert_has_size() {
+  assert_has_size(({1, 2, 3}), 3);
+  assert_has_size(("hello"), 5);
+  assert_has_size((["a": 1, "b": 2]), 2);
+}
+
+// ── Skip with reason ────────────────────────────────────────────────
+
+constant skip_reasons = ([
+  "test_skip_with_static_reason": "Feature not yet implemented",
+]);
+
+void test_skip_with_static_reason() {
+  assert_fail("Should be skipped");
+}
+
+void test_skip_runtime() {
+  skip("Runtime condition not met");
+  assert_fail("Should not reach here");
+}
+
+void test_skip_runtime_in_setup() {
+  // This test passes — it doesn't call skip() in the test itself
   assert_true(1);
 }

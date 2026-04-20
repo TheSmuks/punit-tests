@@ -18,17 +18,17 @@ PUnit is a JUnit-inspired testing framework written in Pike (8.0.1116+). The fra
 - Timeout: `pike -M . run_tests.pike --timeout=10 tests/`
 - Randomized order: `pike -M . run_tests.pike --randomize --seed=42 tests/`
 
-Expected result: 35 passed, 1 skipped, exit code 0.
+Expected result: 41 passed, 3 skipped, exit code 0.
 
 ## Architecture
 
 - `PUnit.pmod/module.pmod` -- re-exports `Assertions.pmod` so `import PUnit` exposes all assert functions
-- `PUnit.pmod/Assertions.pmod` -- 22 assertion functions, each with an optional `_loc` parameter for exact source location
-- `PUnit.pmod/macros.h` -- preprocessor macros that inject `__FILE__:__LINE__` into assertions. Included via `#include <PUnit.pmod/macros.h>`
+- `PUnit.pmod/Assertions.pmod` -- 28 assertion functions (equality, identity, boolean, null, comparison, containment, type, exceptions, approximate, match, fail, skip, collection), each with an optional `_loc` parameter for exact source location
+- `PUnit.pmod/macros.h` -- preprocessor macros that inject `__FILE__:__LINE__` into assertions. Includes granular headers (equal.h, boolean.h, comparison.h, null.h, membership.h, exception.h, misc.h, collection.h)
 - `PUnit.pmod/TestCase.pike` -- base class with `setup()`, `teardown()`, `setup_class()`, `teardown_class()` lifecycle hooks
 - `PUnit.pmod/TestSuite.pike` -- discovers test methods, handles parameterization, inline tags, filtering, strict validation, timeout, randomized ordering
 - `PUnit.pmod/TestRunner.pike` -- CLI harness, compiles test files via `compile_string`, discovers classes with `test_*` methods
-- `PUnit.pmod/Error.pmod` -- `AssertionError` class, `find_caller_location()` for backtrace-based location reporting
+- `PUnit.pmod/Error.pmod` -- `AssertionError` class, `SkipError` class, `find_caller_location()` for backtrace-based location reporting
 - `PUnit.pmod/Reporter.pike` -- base reporter interface
 - `PUnit.pmod/DotReporter.pike`, `VerboseReporter.pike`, `TAPReporter.pike`, `JUnitReporter.pike` -- output formats
 - `PUnit.pmod/TestResult.pike` -- per-test result container
@@ -52,6 +52,8 @@ Expected result: 35 passed, 1 skipped, exit code 0.
 - Parameterized tests use `constant test_data = ([ "method_name": ({ row_mappings }) ]);`
 - Tag annotations use `constant test_tags = ([ "method_name": ({"tag1", "tag2"}) ]);` or inline `__tag` suffixes in method names.
 - Skip tests with `constant skip_tests = (< "method_name" >);`.
+- Skip reasons: `constant skip_reasons = ([ "method_name": "reason" ]);` annotates skipped tests with a reason.
+- Runtime skip: call `skip("reason")` from within a test or setup to skip with a reason.
 
 ## Pike gotchas
 
@@ -63,8 +65,23 @@ Expected result: 35 passed, 1 skipped, exit code 0.
 - `sprintf("%O", val)` gives debug output. `sprintf("%q", str)` gives quoted string.
 - Method references: `map(arr, function_name)` works if `function_name` is in scope.
 
+## Autodoc requirements
+
+- All public declarations (classes, methods, constants, globals) must have `//!` doc blocks.
+- Protected declarations called from other framework files also need `//!` blocks.
+- Inline comments inside function bodies use `//` (not `//!`).
+- Required tags:
+  - `@param` for every function/method parameter
+  - `@returns` for every non-void function
+  - `@throws` for functions that throw on failure (all assertions)
+  - `@seealso` for related API functions
+  - `@note` for important caveats
+  - `@expr{}` for inline Pike expressions
+- Do NOT use `@deprecated` unless actually deprecating.
+- Doc blocks go immediately before the declaration (no blank line between `//!` and code).
+
 ## PR instructions
 
 - Title format: descriptive summary of the change
-- Run `pike -M . run_tests.pike tests/` before committing -- all 35 tests must pass
+- Run `pike -M . run_tests.pike tests/` before committing -- all 41 tests must pass
 - If adding new assertions or framework features, add corresponding test cases

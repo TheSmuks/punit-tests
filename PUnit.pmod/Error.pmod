@@ -1,7 +1,44 @@
 //! AssertionError — thrown when an assertion fails.
 //!
 //! Carries a structured message with optional source location info
-//! for reporter formatting.
+//! for reporter formatting. Inherits @expr{Error.Generic@}.
+//!
+//! @member string assertion_message
+//!   Human-readable failure description.
+//! @member string location
+//!   Source location string (e.g. @tt{"MyTests.pike:42"@}), or empty.
+//!
+//! @seealso TestResult
+
+//! SkipError — thrown by @expr{skip()@} to abort the current test.
+//!
+//! The test runner catches this and marks the test as skipped
+//! with the provided reason string.
+//!
+//! @member string skip_reason
+//!   The reason the test was skipped.
+//!
+//! @seealso skip
+class SkipError {
+  inherit Error.Generic;
+
+  constant is_skip_error = 1;
+
+  string skip_reason;
+
+  //! @param reason
+  //!   Skip reason string.
+  void create(string reason) {
+    skip_reason = reason;
+    ::create(reason);
+  }
+
+  string _sprintf(int|void fmt) {
+    if (fmt == 'O')
+      return "SkipError: " + skip_reason;
+    return sprintf("SkipError(%O)", skip_reason);
+  }
+}
 
 class AssertionError {
   inherit Error.Generic;
@@ -11,12 +48,24 @@ class AssertionError {
   string assertion_message;
   string location;
 
+  //! @param msg
+  //!   Failure message.
+  //! @param loc
+  //!   Optional source location string.
+  //!
   void create(string msg, void|string loc) {
     assertion_message = msg;
     location = loc || "";
     ::create(msg);
   }
 
+  //! Format the error for display.
+  //!
+  //! @param fmt
+  //!   Format specifier; @expr{'O'@} for human-readable, others for debug.
+  //! @returns
+  //!   Formatted string representation.
+  //!
   string _sprintf(int|void fmt) {
     if (fmt == 'O') {
       string s = "AssertionError: " + assertion_message;
@@ -82,6 +131,11 @@ string find_caller_location(array bt) {
 }
 
 //! Get the filename from a backtrace frame (object or array).
+//! @param frame
+//!   A backtrace frame (object or array).
+//! @returns
+//!   The filename string, or empty string on failure.
+//!
 protected string _frame_file(mixed frame) {
   if (objectp(frame) && functionp(frame->filename))
     return frame->filename();

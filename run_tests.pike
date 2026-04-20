@@ -3,7 +3,19 @@
 //! @code
 //! pike -M . run_tests.pike [options] <directories...>
 //! @endcode
+//!
+//! Parses command-line flags and delegates to TestRunner.
+//!
+//! @seealso TestRunner
 
+//! Entry point — parse arguments and run tests.
+//!
+//! @param argc
+//!   Argument count.
+//! @param argv
+//!   Argument array.
+//! @returns
+//!   Exit code: 0 if all tests pass, 1 if any failure.
 int main(int argc, array(string) argv) {
   // Parse CLI arguments
   mapping options = ([]);
@@ -81,6 +93,7 @@ int main(int argc, array(string) argv) {
   return exit_code;
 }
 
+//! Print usage information to stdout.
 void _usage() {
   write("Usage: pike -M . run_tests.pike [options] <directories...>\n"
         "\n"

@@ -17,6 +17,40 @@ protected int timeout = 0;
 protected int randomize = 0;
 protected int seed = 0;
 
+//! Create a new TestRunner with the given options.
+//!
+//! @param options
+//!   Mapping of configuration options:
+//!   @mapping
+//!     @member array "tags"
+//!       Include tags — run only tests with at least one matching tag.
+//!     @member array "exclude_tags"
+//!       Exclude tags — skip tests with any matching tag.
+//!     @member string "filter"
+//!       Glob pattern for method name filtering.
+//!     @member int "stop_on_failure"
+//!       Stop after first failure.
+//!     @member int "verbose"
+//!       Use VerboseReporter.
+//!     @member int "list_only"
+//!       List test names without running.
+//!     @member int "list_verbose"
+//!       Include tags in listing.
+//!     @member int "strict"
+//!       Treat validation warnings as errors.
+//!     @member int "timeout"
+//!       Per-test timeout in seconds.
+//!     @member int "randomize"
+//!       Randomize test execution order.
+//!     @member int "seed"
+//!       PRNG seed for reproducible random ordering.
+//!     @member string "junit"
+//!       File path for JUnit XML output.
+//!     @member int "tap"
+//!       Use TAP reporter.
+//!     @member int "no_color"
+//!       Disable ANSI colors.
+//!   @endmapping
 void create(void|mapping options) {
   if (!options) options = ([]);
 
@@ -155,6 +189,12 @@ int run(array(string) paths) {
   return has_failures ? 1 : 0;
 }
 
+//! Collect .pike files from a path (file or directory).
+//!
+//! @param path
+//!   File or directory path to scan.
+//! @returns
+//!   Array of .pike file paths.
 protected array(string) _collect_files(string path) {
   if (Stdio.is_file(path)) {
     if (has_suffix(path, ".pike"))
@@ -166,6 +206,12 @@ protected array(string) _collect_files(string path) {
   return sort(_scan_dir(path));
 }
 
+//! Recursively scan a directory for .pike files.
+//!
+//! @param dir
+//!   Directory path to scan.
+//! @returns
+//!   Array of .pike file paths found.
 protected array(string) _scan_dir(string dir) {
   array(string) entries;
   if (mixed e = catch { entries = get_dir(dir); }) {
@@ -189,7 +235,11 @@ protected array(string) _scan_dir(string dir) {
 }
 
 //! Compile a .pike file and discover test classes.
-//! Returns an array of mappings: ([ "name": class_name, "instance": obj ])
+//!
+//! @param file
+//!   Path to the .pike file to compile and scan.
+//! @returns
+//!   Array of mappings: ([ "name": class_name, "instance": obj ])
 protected array _discover_in_file(string file) {
   string source;
   if (mixed e = catch {
@@ -250,6 +300,11 @@ protected array _discover_in_file(string file) {
 }
 
 //! Check if an object has any test_* methods.
+//!
+//! @param obj
+//!   Object to inspect.
+//! @returns
+//!   Non-zero if the object has any test_* methods.
 protected int _has_test_methods(object obj) {
   array(string) indices_list;
   if (mixed e = catch { indices_list = indices(obj); }) return 0;
@@ -265,6 +320,11 @@ protected int _has_test_methods(object obj) {
 }
 
 //! Extract a display name from a file path.
+//!
+//! @param file
+//!   File path to extract name from.
+//! @returns
+//!   Display name derived from the file's basename.
 protected string _extract_class_name(string file) {
   array parts = file / "/";
   string basename = sizeof(parts) > 0 ? parts[-1] : file;
@@ -275,11 +335,21 @@ protected string _extract_class_name(string file) {
 }
 
 //! Generate a suite name from a file path.
+//!
+//! @param file
+//!   File path to generate name from.
+//! @returns
+//!   Suite name derived from the file path.
 protected string _suite_name(string file) {
   return _extract_class_name(file);
 }
 
 //! Format a compilation error.
+//!
+//! @param err
+//!   Error value from a @expr{catch@} block.
+//! @returns
+//!   Human-readable error string.
 protected string _format_compile_error(mixed err) {
   if (arrayp(err)) {
     if (sizeof(err) > 0 && stringp(err[0]))
@@ -290,6 +360,12 @@ protected string _format_compile_error(mixed err) {
 }
 
 //! Convert Results objects to the mapping format expected by run_finished.
+//!
+//! @param all_results
+//!   Array of TestSuite.Results objects.
+//! @returns
+//!   Array of result mappings with suite_name, passed, failed, errors,
+//!   skipped, elapsed_ms, and test_results.
 protected array _to_result_maps(array all_results) {
   array result = ({});
   foreach (all_results; ; object r) {

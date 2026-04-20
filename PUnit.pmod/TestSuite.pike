@@ -4,6 +4,21 @@
 //! filtering, and executes tests with lifecycle callbacks.
 
 //! Result of running a complete suite.
+//!
+//! @member string suite_name
+//!   Name of the test suite (typically file name).
+//! @member int passed
+//!   Number of passing tests.
+//! @member int failed
+//!   Number of failing tests.
+//! @member int errors
+//!   Number of errored tests.
+//! @member int skipped
+//!   Number of skipped tests.
+//! @member float elapsed_ms
+//!   Total suite execution time in milliseconds.
+//! @member array test_results
+//!   Array of TestResult objects for each test.
 class Results {
   string suite_name;
   int passed;
@@ -14,7 +29,6 @@ class Results {
   array test_results = ({});
 }
 
-//! Information about a discovered test class.
 protected string _suite_name;
 protected array _classes = ({});
 protected object _reporter;
@@ -28,6 +42,28 @@ protected int _randomize = 0;
 protected int _seed = 0;
 protected int _prng_state = 0;
 protected array(string) _validation_warnings = ({});
+//! Create a new test suite.
+//!
+//! @param name
+//!   Display name for this suite (typically the file path).
+//! @param rep
+//!   Reporter instance for test output.
+//! @param inc_tags
+//!   Optional array of tags; tests must match at least one to run.
+//! @param exc_tags
+//!   Optional array of tags; tests matching any are excluded.
+//! @param meth_filter
+//!   Optional glob pattern to filter test method names.
+//! @param stop
+//!   If non-zero, stop the suite on the first failure or error.
+//! @param strict
+//!   If non-zero, treat validation warnings as errors.
+//! @param timeout
+//!   Per-test timeout in seconds (0 = no timeout).
+//! @param randomize
+//!   If non-zero, randomize test execution order.
+//! @param seed
+//!   PRNG seed for reproducible random ordering.
 void create(string name, object rep,
           void|array(string) inc_tags,
           void|array(string) exc_tags,
@@ -52,7 +88,13 @@ void create(string name, object rep,
 
 //! Add a compiled class to the suite.
 //! Discovers test_ methods from the class and its ancestors.
-//! Skips classes with skip_all = 1.
+//!
+//! @param test_instance
+//!   Compiled test class instance.
+//! @param class_name
+//!   Display name for this class.
+//! @note
+//!   Skips classes with @expr{skip_all = 1@}.
 void add_class(object test_instance, string class_name) {
   // Check if entire class should be skipped
   int skip_all = 0;
@@ -91,8 +133,15 @@ void add_class(object test_instance, string class_name) {
 }
 
 //! Validate a test class for common configuration errors.
-//! Returns an array of warning strings (empty if no issues).
-//! Checks: test_tags/skip_tests/test_data keys that don't match any test method.
+//! Checks: test_tags/skip_tests/test_data keys that don't match
+//! any test method.
+//!
+//! @param test_instance
+//!   Compiled test class instance.
+//! @param class_name
+//!   Display name for this class (used in warning messages).
+//! @returns
+//!   Array of warning strings (empty if no issues).
 protected array(string) _validate_class(object test_instance, string class_name) {
   array(string) warnings = ({});
 
@@ -147,7 +196,11 @@ protected array(string) _validate_class(object test_instance, string class_name)
 
 
 //! List all test methods in this suite without running them.
-//! Returns an array of mappings with name and tags for each test.
+//! Includes parameterized expansions.
+//!
+//! @returns
+//!   Array of mappings with keys: @expr{name@}, @expr{method@},
+//!   @expr{class_name@}, @expr{tags@}.
 //! Includes parameterized expansions.
 array(mapping) list_tests() {
   array(mapping) result = ({});
@@ -176,10 +229,16 @@ array(mapping) list_tests() {
 }
 
 //! Check if strict validation produced any errors.
+//!
+//! @returns
+//!   Non-zero if strict mode produced validation errors.
 int has_validation_errors() {
   return _strict && sizeof(_validation_warnings) > 0;
 }
 //! Execute all tests in this suite and return results.
+//!
+//! @returns
+//!   A Results object with suite execution summary.
 Results run() {
   Results results = Results();
   results->suite_name = _suite_name;
@@ -214,6 +273,11 @@ Results run() {
 
 //! Discover test_* methods from an object, including inherited ones.
 //! Expands parameterized methods into synthetic entries: test_method[0], etc.
+//!
+//! @param obj
+//!   Object to inspect for test methods.
+//! @returns
+//!   Sorted array of test method names, with parameterized expansion.
 protected array(string) _discover_test_methods(object obj) {
   array(string) result = ({});
   // indices() returns all symbols including inherited ones
@@ -270,6 +334,13 @@ protected array(string) _discover_test_methods(object obj) {
 //! Check if a test method should run based on tags, filters, and skips.
 //! For parameterized methods (name matches pattern[N]), uses the base name
 //! for tag/skip/filter checks. Merges inline tags from __suffixes.
+//!
+//! @param instance
+//!   Test class instance to check.
+//! @param method_name
+//!   Test method name (may include [N] suffix).
+//! @returns
+//!   Non-zero if the test should run.
 protected int _should_run(object instance, string method_name) {
   string base = _base_method(method_name);
   array(string) inline_tags = _inline_tags(method_name);
@@ -322,6 +393,11 @@ protected int _should_run(object instance, string method_name) {
 }
 
 //! Get the test_tags mapping from an instance (or empty mapping).
+//!
+//! @param instance
+//!   Test class instance to query.
+//! @returns
+//!   Tag mapping or empty mapping @expr{([])@}.
 protected mapping _get_tags(object instance) {
   if (mixed e = catch {
     mixed v = instance->test_tags;
@@ -330,7 +406,72 @@ protected mapping _get_tags(object instance) {
   return ([]);
 }
 
+//! Get the skip_reasons mapping from an instance (or empty mapping).
+//!
+//! @param instance
+//!   Test class instance to query.
+//! @returns
+//!   Skip reasons mapping or empty mapping @expr{([])@}.
+protected mapping _get_skip_reasons(object instance) {
+  if (mixed e = catch {
+    mixed v = instance->skip_reasons;
+    if (mappingp(v)) return v;
+  }) { }
+  return ([]);
+}
+
+//! Find the skip reason for a method, if any.
+//!
+//! @param instance
+//!   Test class instance.
+//! @param method
+//!   Test method name (possibly with [N] or __tags suffixes).
+//! @returns
+//!   Skip reason string, or @expr{"skipped"}@ if no reason is configured.
+protected string _find_skip_reason(object instance, string method) {
+  string base = _base_method(method);
+  mapping reasons = _get_skip_reasons(instance);
+  if (sizeof(reasons) > 0) {
+    if (reasons[method]) return reasons[method];
+    if (reasons[base]) return reasons[base];
+  }
+  return "skipped";
+}
+
+//! Check if an error is a SkipError from our framework.
+//!
+//! @param err
+//!   A Pike error.
+//! @returns
+//!   Non-zero if the error is a SkipError.
+protected int _is_skip_error(mixed err) {
+  if (objectp(err))
+    return !undefinedp(err->is_skip_error) && err->is_skip_error;
+  if (arrayp(err) && sizeof(err) > 0 && objectp(err[0]))
+    return !undefinedp(err[0]->is_skip_error) && err[0]->is_skip_error;
+  return 0;
+}
+
+//! Extract the skip reason from a SkipError.
+//!
+//! @param err
+//!   A Pike error that is a SkipError.
+//! @returns
+//!   The skip reason string.
+protected string _skip_error_reason(mixed err) {
+  if (arrayp(err) && sizeof(err) > 0 && objectp(err[0]))
+    return err[0]->skip_reason || "skipped";
+  if (objectp(err))
+    return err->skip_reason || "skipped";
+  return "skipped";
+}
+
 //! Run all tests in a single test class.
+//!
+//! @param cls
+//!   Class info mapping with keys: class_name, instance, test_methods, test_data.
+//! @param results
+//!   Results accumulator to update.
 protected void _run_class(mapping cls, Results results) {
   object instance = cls->instance;
   string class_name = cls->class_name;
@@ -344,10 +485,11 @@ protected void _run_class(mapping cls, Results results) {
     .TestResult tr = .TestResult(method, class_name);
 
     if (!_should_run(instance, method)) {
-      tr->set_skipped("skipped");
+      string skip_reason = _find_skip_reason(instance, method);
+      tr->set_skipped(skip_reason);
       results->skipped++;
       results->test_results += ({ tr });
-      _reporter->test_skipped(class_name + "::" + method, "skipped");
+      _reporter->test_skipped(class_name + "::" + method, skip_reason);
       continue;
     }
 
@@ -408,17 +550,27 @@ protected void _run_class(mapping cls, Results results) {
         results->test_results += ({ tr });
         _reporter->test_error(class_name + "::" + method, elapsed, msg, "");
       } else if (test_error) {
-        // Test threw — determine if it's an assertion failure or error
-        string msg = _format_error(test_error);
-        string loc = _extract_location(test_error);
+        // Check for SkipError (runtime skip)
+        if (_is_skip_error(test_error)) {
+          string reason = _skip_error_reason(test_error);
+          tr->set_skipped(reason);
+          results->skipped++;
+          results->test_results += ({ tr });
+          _reporter->test_skipped(class_name + "::" + method, reason);
+        } else if (_is_assertion_error(test_error)) {
+          // Test threw — determine if it's an assertion failure or error
+          string msg = _format_error(test_error);
+          string loc = _extract_location(test_error);
 
-        if (_is_assertion_error(test_error)) {
           tr->set_failed(elapsed, msg, loc);
           results->failed++;
           results->test_results += ({ tr });
           _reporter->test_failed(class_name + "::" + method,
                                  elapsed, msg, loc);
         } else {
+          string msg = _format_error(test_error);
+          string loc = _extract_location(test_error);
+
           tr->set_error(elapsed, msg, loc);
           results->errors++;
           results->test_results += ({ tr });
@@ -465,6 +617,11 @@ protected void _run_class(mapping cls, Results results) {
 
 
 //! Get the test_data mapping from an instance (or empty mapping).
+//!
+//! @param instance
+//!   Test class instance to query.
+//! @returns
+//!   Test data mapping or empty mapping @expr{([])@}.
 protected mapping _get_test_data(object instance) {
   if (mixed e = catch {
     mixed v = instance->test_data;
@@ -475,8 +632,14 @@ protected mapping _get_test_data(object instance) {
 
 //! Extract the base method name from a (possibly parameterized/inline-tagged) name.
 //! Strips [N] parameterized index and __tag inline tag suffixes.
-//! "test_foo__math[2]" -> "test_foo", "test_foo[2]" -> "test_foo",
-//! "test_foo__math" -> "test_foo", "test_foo" -> "test_foo".
+//! @expr{"test_foo__math[2]"@} -> @expr{"test_foo"@},
+//! @expr{"test_foo[2]"@} -> @expr{"test_foo"@},
+//! @expr{"test_foo__math"@} -> @expr{"test_foo"@}, @expr{"test_foo"@} -> @expr{"test_foo"@}.
+//!
+//! @param method_name
+//!   Raw method name, possibly with [N] and/or __tag suffixes.
+//! @returns
+//!   Base method name without tags or indices.
 protected string _base_method(string method_name) {
   // First strip [N] suffix
   int bracket = search(method_name, "[");
@@ -486,6 +649,11 @@ protected string _base_method(string method_name) {
 }
 
 //! Extract the row index from a parameterized method name, or -1.
+//!
+//! @param method_name
+//!   Method name that may contain a @expr{[N]@} suffix.
+//! @returns
+//!   Row index as integer, or @expr{-1@} if not parameterized.
 protected int _param_index(string method_name) {
   int start = search(method_name, "[");
   if (start < 0) return -1;
@@ -496,7 +664,12 @@ protected int _param_index(string method_name) {
 }
 
 //! Strip inline tag suffixes from a method name.
-//! "test_add__math__fast" -> "test_add", "test_add" -> "test_add".
+//! @expr{"test_add__math__fast"@} -> @expr{"test_add"@}, @expr{"test_add"@} -> @expr{"test_add"@}.
+//!
+//! @param method_name
+//!   Method name with possible @expr{__tag@} suffixes.
+//! @returns
+//!   Method name with @expr{__tag@} suffixes removed.
 protected string _strip_inline_tags(string method_name) {
   // Look for __ after the initial test_ prefix
   int pos = search(method_name[5..], "__");
@@ -505,7 +678,12 @@ protected string _strip_inline_tags(string method_name) {
 }
 
 //! Extract inline tags from a method name.
-//! "test_add__math__fast" -> ({"math", "fast"}), "test_add" -> ({}).
+//! @expr{"test_add__math__fast"@} -> @expr{({"math", "fast"})@}, @expr{"test_add"@} -> @expr{({})@}.
+//!
+//! @param method_name
+//!   Method name with possible @expr{__tag@} suffixes.
+//! @returns
+//!   Array of inline tag strings.
 protected array(string) _inline_tags(string method_name) {
   int pos = search(method_name[5..], "__");
   if (pos < 0) return ({});
@@ -517,6 +695,15 @@ protected array(string) _inline_tags(string method_name) {
 //! Invoke a test method, handling parameterized dispatch.
 //! For parameterized methods (name contains [N]), extracts the actual
 //! method name (with __tags preserved) and row data.
+//!
+//! @param instance
+//!   Test class instance.
+//! @param method
+//!   Method name (possibly with @expr{[N]@} suffix).
+//! @param test_data
+//!   Optional parameterized test data mapping.
+//! @throws Error
+//!   If the parameterized test index is out of range.
 protected void _invoke_test(object instance, string method, void|mapping test_data) {
   int idx = _param_index(method);
   if (idx < 0) {
@@ -544,6 +731,11 @@ protected void _invoke_test(object instance, string method, void|mapping test_da
 
 //! Format a Pike error for display.
 //! Pike errors can be: string, array({message, backtrace}), or error objects.
+//!
+//! @param err
+//!   A Pike error (string, array, or object).
+//! @returns
+//!   Human-readable error string.
 protected string _format_error(mixed err) {
   if (stringp(err)) return err;
 
@@ -587,6 +779,11 @@ protected string _format_error(mixed err) {
 //! Walks the backtrace looking for the test file frame.
 //! Collects ALL non-framework frames and returns the last one,
 //! which is typically the deepest call site (the test method).
+//!
+//! @param err
+//!   A Pike error.
+//! @returns
+//!   Source location string like @expr{"MyTests.pike:42"@}.
 protected string _extract_location(mixed err) {
   // Try to get location from our AssertionError object
   if (objectp(err) && !undefinedp(err->location) &&
@@ -620,6 +817,11 @@ protected string _extract_location(mixed err) {
 }
 
 //! Check if an error is an AssertionError from our framework.
+//!
+//! @param err
+//!   A Pike error.
+//! @returns
+//!   Non-zero if the error is an AssertionError.
 protected int _is_assertion_error(mixed err) {
   if (objectp(err))
     return !undefinedp(err->is_assertion_error) && err->is_assertion_error;

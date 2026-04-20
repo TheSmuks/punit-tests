@@ -2,16 +2,30 @@
 //!
 //! Consumed by Jenkins, GitLab, GitHub Actions (dorny/test-reporter),
 //! Azure DevOps, CircleCI, and most CI systems.
+//!
+//! @seealso Reporter
 
 inherit .Reporter;
 
 protected string output_file;
 protected array suite_data = ({});
 
+//! Create a JUnitReporter that writes to a file.
+//!
+//! @param file
+//!   Output file path for the XML report.
+//!
 void create(string file) {
   output_file = file;
 }
 
+//! Called when a test suite begins.
+//!
+//! @param suite_name
+//!   Name of the suite.
+//! @param num_tests
+//!   Number of tests in this suite.
+//!
 void suite_started(string suite_name, int num_tests) {
   // Track current suite
   suite_data += ({ ([
@@ -22,8 +36,20 @@ void suite_started(string suite_name, int num_tests) {
   ]) });
 }
 
+//! Called when an individual test begins.
+//!
+//! @param test_name
+//!   Name of the test.
+//!
 void test_started(string test_name) { }
 
+//! Called when a test passes.
+//!
+//! @param test_name
+//!   Name of the test.
+//! @param elapsed_ms
+//!   Execution time in milliseconds.
+//!
 void test_passed(string test_name, float elapsed_ms) {
   if (sizeof(suite_data) == 0) return;
   mapping current = suite_data[-1];
@@ -33,6 +59,17 @@ void test_passed(string test_name, float elapsed_ms) {
   ]) });
 }
 
+//! Called when a test fails (assertion error).
+//!
+//! @param test_name
+//!   Name of the test.
+//! @param elapsed_ms
+//!   Execution time in milliseconds.
+//! @param message
+//!   Failure message.
+//! @param location
+//!   File and line where the failure occurred.
+//!
 void test_failed(string test_name, float elapsed_ms,
                  string message, string location) {
   if (sizeof(suite_data) == 0) return;
@@ -45,6 +82,17 @@ void test_failed(string test_name, float elapsed_ms,
   ]) });
 }
 
+//! Called when a test errors (unexpected exception).
+//!
+//! @param test_name
+//!   Name of the test.
+//! @param elapsed_ms
+//!   Execution time in milliseconds.
+//! @param message
+//!   Error message.
+//! @param location
+//!   File and line where the error occurred.
+//!
 void test_error(string test_name, float elapsed_ms,
                 string message, string location) {
   if (sizeof(suite_data) == 0) return;
@@ -57,6 +105,13 @@ void test_error(string test_name, float elapsed_ms,
   ]) });
 }
 
+//! Called when a test is skipped.
+//!
+//! @param test_name
+//!   Name of the test.
+//! @param reason
+//!   Optional skip reason.
+//!
 void test_skipped(string test_name, void|string reason) {
   if (sizeof(suite_data) == 0) return;
   mapping current = suite_data[-1];
@@ -67,6 +122,19 @@ void test_skipped(string test_name, void|string reason) {
   ]) });
 }
 
+//! Called when a test suite finishes.
+//!
+//! @param passed
+//!   Number of passing tests.
+//! @param failed
+//!   Number of failing tests.
+//! @param errors
+//!   Number of errored tests.
+//! @param skipped
+//!   Number of skipped tests.
+//! @param elapsed_ms
+//!   Total elapsed time for this suite in milliseconds.
+//!
 void suite_finished(int passed, int failed, int errors,
                     int skipped, float elapsed_ms) {
   if (sizeof(suite_data) == 0) return;
@@ -78,6 +146,11 @@ void suite_finished(int passed, int failed, int errors,
   current->elapsed_s = elapsed_ms / 1000.0;
 }
 
+//! Called after all suites have finished.
+//!
+//! @param all_results
+//!   Array of suite result mappings.
+//!
 void run_finished(array all_results) {
   String.Buffer buf = String.Buffer();
   buf->add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
@@ -157,6 +230,11 @@ void run_finished(array all_results) {
 }
 
 //! Escape a string for safe inclusion in XML attribute values and text.
+//!
+//! @param s
+//!   Raw string to escape.
+//! @returns
+//!   XML-safe string with entities escaped and control chars removed.
 protected string _xml_escape(string s) {
   if (!s) return "";
   s = replace(s, ({"&", "<", ">", "\"", "'"}),
