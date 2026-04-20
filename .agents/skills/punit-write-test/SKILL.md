@@ -91,6 +91,15 @@ assert_contains(needle, haystack);  // works on arrays, mappings, strings
 assert_match(pattern, str);          // regexp match
 ```
 
+### Collection assertions
+
+```pike
+assert_each(items, checker);                // checker returns true for each element
+assert_contains_only(expected, actual);     // actual contains only elements from expected
+assert_has_size(collection, expected_size); // works on arrays, mappings, multisets, strings
+```
+
+
 ### Floating-point
 
 ```pike
@@ -113,11 +122,17 @@ assert_throws_fn(lambda() { /* code that should throw anything */ });
 assert_no_throw(lambda() { /* code that should not throw */ });
 ```
 
+```pike
+assert_throws_message(error_type, expected_message, fn);  // check error message too
+assert_throws_message(error_type, /regex/, fn, 1);        // regex matching
+```
+
 ### Forced failure
 
 ```pike
 assert_fail("This should not be reached");
 ```
+
 
 All assertions accept an optional `msg` parameter before the last argument for custom failure messages.
 
@@ -174,6 +189,21 @@ constant skip_tests = (< "test_broken", "test_not_implemented" >);
 // Skip entire class
 constant skip_all = true;
 ```
+
+### Runtime skipping
+
+```pike
+// Skip at runtime (from within a test)
+void test_optional_feature() {
+  if (!has_feature())
+    skip("Feature not available");
+  // ... test continues if not skipped ...
+}
+
+// Skip with reasons
+constant skip_reasons = ([ "test_broken": "Bug #123" ]);
+```
+
 
 ## Lifecycle hooks
 

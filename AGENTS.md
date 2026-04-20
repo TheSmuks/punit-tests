@@ -34,6 +34,7 @@ Expected result: 41 passed, 3 skipped, exit code 0.
 - `PUnit.pmod/TestResult.pike` -- per-test result container
 - `PUnit.pmod/Colors.pmod` -- ANSI color helpers
 - `run_tests.pike` -- CLI entry point, parses flags and delegates to TestRunner
+- `ARCHITECTURE.md` -- full architecture document with diagrams, data flow, and extension points
 
 ## Code style
 
