@@ -28,12 +28,71 @@ protected void _fail(string msg, void|string _loc) {
 
 // ── Equality ──────────────────────────────────────────────────────────
 
+//! Produce a structured diff for complex values (arrays, mappings).
+//! Returns a string with line-by-line differences, or empty string if not applicable.
+protected string _diff_values(mixed expected, mixed actual) {
+  // Only diff complex types
+  if (!arrayp(expected) && !mappingp(expected)) return "";
+  if (arrayp(expected) && !arrayp(actual)) return "";
+  if (mappingp(expected) && !mappingp(actual)) return "";
+
+  String.Buffer buf = String.Buffer();
+
+  if (arrayp(expected)) {
+    array ea = expected;
+    array aa = actual;
+    int max_len = max(sizeof(ea), sizeof(aa));
+    if (max_len <= 20) {
+      // Show element-by-element diff for small arrays
+      buf->add("\n  Diff (array, " + sizeof(ea) + " expected, " + sizeof(aa) + " actual):\n");
+      for (int i = 0; i < max_len; i++) {
+        if (i < sizeof(ea) && i < sizeof(aa)) {
+          if (!equal(ea[i], aa[i])) {
+            buf->add(sprintf("    [%d] expected: %O\n", i, ea[i]));
+            buf->add(sprintf("    [%d] actual:   %O\n", i, aa[i]));
+          }
+        } else if (i < sizeof(ea)) {
+          buf->add(sprintf("    [%d] expected: %O  (missing in actual)\n", i, ea[i]));
+        } else {
+          buf->add(sprintf("    [%d] actual:   %O  (extra in actual)\n", i, aa[i]));
+        }
+      }
+    }
+  } else if (mappingp(expected)) {
+    mapping em = expected;
+    mapping am = actual;
+    array all_keys = sort(Array.uniq(indices(em) + indices(am)));
+    if (sizeof(all_keys) <= 20) {
+      buf->add("\n  Diff (mapping, " + sizeof(em) + " expected, " + sizeof(am) + " actual):\n");
+      foreach (all_keys; ; mixed key) {
+        int in_exp = !zero_type(em[key]);
+        int in_act = !zero_type(am[key]);
+        if (in_exp && in_act) {
+          if (!equal(em[key], am[key])) {
+            buf->add(sprintf("    [%O] expected: %O\n", key, em[key]));
+            buf->add(sprintf("    [%O] actual:   %O\n", key, am[key]));
+          }
+        } else if (in_exp) {
+          buf->add(sprintf("    [%O] expected: %O  (missing in actual)\n", key, em[key]));
+        } else {
+          buf->add(sprintf("    [%O] actual:   %O  (extra in actual)\n", key, am[key]));
+        }
+      }
+    }
+  }
+
+  return buf->get();
+}
+
 //! Assert that @expr{expected@} and @expr{actual@} are structurally equal
 //! using Pike's @expr{equal()@}. This works for arrays, mappings, multisets,
 //! and objects implementing @expr{_equal()@}.
+//! For arrays and mappings, the failure message includes an element-by-element diff.
 void assert_equal(mixed expected, mixed actual, void|string msg, void|string _loc) {
-  if (!equal(expected, actual))
-    _fail(_msg(msg, "Expected %O but got %O", expected, actual), _loc);
+  if (!equal(expected, actual)) {
+    string diff = _diff_values(expected, actual);
+    _fail(_msg(msg, "Expected %O but got %O" + diff, expected, actual), _loc);
+  }
 }
 
 //! Assert that @expr{expected@} and @expr{actual@} are @b{not@} equal.
@@ -42,6 +101,19 @@ void assert_not_equal(mixed expected, mixed actual, void|string msg, void|string
     _fail(_msg(msg, "Expected values to differ, but both were %O", expected), _loc);
 }
 
+//! Assert that @expr{expected@} and @expr{actual@} are the same object
+//! (identity check using @expr{==@}). Unlike @expr{assert_equal@}, which uses
+//! structural equality, this checks that both values reference the same object.
+void assert_same(mixed expected, mixed actual, void|string msg, void|string _loc) {
+  if (expected != actual)
+    _fail(_msg(msg, "Expected same identity but got different objects: %O vs %O", expected, actual), _loc);
+}
+
+//! Assert that @expr{expected@} and @expr{actual@} are @b{not@} the same object.
+void assert_not_same(mixed expected, mixed actual, void|string msg, void|string _loc) {
+  if (expected == actual)
+    _fail(_msg(msg, "Expected different identity but both are the same object: %O", expected), _loc);
+}
 // ── Boolean ───────────────────────────────────────────────────────────
 
 //! Assert that @expr{val@} is truthy.
@@ -159,16 +231,12 @@ mixed assert_throws(void|program error_type, function fn, void|string msg, void|
       err_obj = err;
     }
     if (err_obj && programp(error_type)) {
-      // Check if the error object's program is the expected one.
-      // Pike objects implement _is_type or we check the program directly.
-      // Simple approach: check if the object is an instance of the program.
-      // We can do this by checking if the program of the object inherits
-      // from or equals error_type.
-      if (object_program(err_obj) != error_type) {
-        // Also check if the object inherits from the expected type.
-        // Pike doesn't have a simple isinstance(). We just compare programs.
-        _fail(_msg(msg, "Expected %O but got %O", error_type,
-                   object_program(err_obj)), _loc);
+      program actual_prog = object_program(err_obj);
+      // Check exact match or inheritance
+      if (actual_prog != error_type &&
+          !Program.inherits(actual_prog, error_type)) {
+        _fail(_msg(msg, "Expected %O (or subclass) but got %O", error_type,
+                   actual_prog), _loc);
       }
     }
   }

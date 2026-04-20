@@ -15,16 +15,18 @@ PUnit is a JUnit-inspired testing framework written in Pike (8.0.1116+). The fra
 - Strict validation: `pike -M . run_tests.pike --strict tests/`
 - Tag filtering: `pike -M . run_tests.pike --tag=math tests/`
 - Method filtering: `pike -M . run_tests.pike --filter=test_add* tests/`
+- Timeout: `pike -M . run_tests.pike --timeout=10 tests/`
+- Randomized order: `pike -M . run_tests.pike --randomize --seed=42 tests/`
 
-Expected result: 28 passed, 1 skipped, exit code 0.
+Expected result: 35 passed, 1 skipped, exit code 0.
 
 ## Architecture
 
 - `PUnit.pmod/module.pmod` -- re-exports `Assertions.pmod` so `import PUnit` exposes all assert functions
-- `PUnit.pmod/Assertions.pmod` -- 20 assertion functions, each with an optional `_loc` parameter for exact source location
+- `PUnit.pmod/Assertions.pmod` -- 22 assertion functions, each with an optional `_loc` parameter for exact source location
 - `PUnit.pmod/macros.h` -- preprocessor macros that inject `__FILE__:__LINE__` into assertions. Included via `#include <PUnit.pmod/macros.h>`
 - `PUnit.pmod/TestCase.pike` -- base class with `setup()`, `teardown()`, `setup_class()`, `teardown_class()` lifecycle hooks
-- `PUnit.pmod/TestSuite.pike` -- discovers test methods, handles parameterization, inline tags, filtering, strict validation
+- `PUnit.pmod/TestSuite.pike` -- discovers test methods, handles parameterization, inline tags, filtering, strict validation, timeout, randomized ordering
 - `PUnit.pmod/TestRunner.pike` -- CLI harness, compiles test files via `compile_string`, discovers classes with `test_*` methods
 - `PUnit.pmod/Error.pmod` -- `AssertionError` class, `find_caller_location()` for backtrace-based location reporting
 - `PUnit.pmod/Reporter.pike` -- base reporter interface
@@ -64,5 +66,5 @@ Expected result: 28 passed, 1 skipped, exit code 0.
 ## PR instructions
 
 - Title format: descriptive summary of the change
-- Run `pike -M . run_tests.pike tests/` before committing -- all 28 tests must pass
+- Run `pike -M . run_tests.pike tests/` before committing -- all 35 tests must pass
 - If adding new assertions or framework features, add corresponding test cases

@@ -11,7 +11,11 @@ protected int stop_on_failure;
 protected int verbose;
 protected int list_only;
 protected int list_verbose;
+protected int compilation_errors = 0;
 protected int strict;
+protected int timeout = 0;
+protected int randomize = 0;
+protected int seed = 0;
 
 void create(void|mapping options) {
   if (!options) options = ([]);
@@ -31,6 +35,9 @@ void create(void|mapping options) {
   list_only = options->list_only || 0;
   list_verbose = options->list_verbose || 0;
   strict = options->strict || 0;
+  timeout = options->timeout || 0;
+  randomize = options->randomize || 0;
+  seed = options->seed || 0;
 
   // Set up reporter
   if (options->junit) {
@@ -87,13 +94,20 @@ int run(array(string) paths) {
   // Build suites
   array suites = ({});
 
+  // Initialize random seed once before building suites
+  if (randomize) {
+    if (!seed) seed = (int)(time() * gethrtime()) & 0x7fffffff;
+    werror("Random seed: %d\n", seed);
+  }
+
   foreach (suite_specs; ; mapping spec) {
     string file = spec->file;
     array classes = spec->classes;
 
     .TestSuite suite = .TestSuite(
       _suite_name(file), reporter,
-      include_tags, exclude_tags, method_filter, stop_on_failure, strict
+      include_tags, exclude_tags, method_filter, stop_on_failure, strict,
+      timeout, randomize, seed
     );
 
     foreach (classes; ; mapping class_info) {
@@ -132,6 +146,9 @@ int run(array(string) paths) {
     if (stop_on_failure && has_failures)
       break;
   }
+
+  if (compilation_errors > 0)
+    has_failures = 1;
 
   reporter->run_finished(_to_result_maps(all_results));
 
@@ -190,7 +207,8 @@ protected array _discover_in_file(string file) {
     pgm = compile_string(source, file);
   }) {
     // Compilation error — report but don't crash
-    write("Compilation error in %s: %s\n", file, _format_compile_error(e));
+    werror("Compilation error in %s: %s\n", file, _format_compile_error(e));
+    compilation_errors++;
     return ({});
   }
 
