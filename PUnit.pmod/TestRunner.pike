@@ -13,6 +13,7 @@ protected int list_only;
 protected int list_verbose;
 protected int compilation_errors = 0;
 protected int strict;
+protected int retry = 0;
 protected int timeout = 0;
 protected int randomize = 0;
 protected int seed = 0;
@@ -45,6 +46,8 @@ protected int seed = 0;
 //!     @member int "seed"
 //!       PRNG seed for reproducible random ordering.
 //!     @member string "junit"
+//!     @member int "retry"
+//!       Retry failed tests up to N times.
 //!       File path for JUnit XML output.
 //!     @member int "tap"
 //!       Use TAP reporter.
@@ -71,6 +74,7 @@ void create(void|mapping options) {
   strict = options->strict || 0;
   timeout = options->timeout || 0;
   randomize = options->randomize || 0;
+  retry = options->retry || 0;
   seed = options->seed || 0;
 
   // Set up reporter
@@ -141,7 +145,7 @@ int run(array(string) paths) {
     .TestSuite suite = .TestSuite(
       _suite_name(file), reporter,
       include_tags, exclude_tags, method_filter, stop_on_failure, strict,
-      timeout, randomize, seed
+      timeout, randomize, seed, retry
     );
 
     foreach (classes; ; mapping class_info) {

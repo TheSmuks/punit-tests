@@ -66,6 +66,8 @@ int main(int argc, array(string) argv) {
       options->strict = 1;
     } else if (arg == "--tap") {
       options->tap = 1;
+    } else if (has_prefix(arg, "--retry=")) {
+      options->retry = (int)arg[8..];
     } else if (has_prefix(arg, "--timeout=")) {
       options->timeout = (int)arg[10..];
     } else if (arg == "--randomize") {
@@ -108,6 +110,7 @@ void _usage() {
         "  --strict               Treat validation warnings as errors\n"
         "  --no-color             Disable ANSI colors\n"
         "  --timeout=N            Per-test timeout in seconds\n"
+        "  --retry=N              Retry failed tests up to N times\n"
         "  --randomize            Run tests in random order\n"
         "  --seed=N               Random seed for --randomize (reproducible)\n"
         "  --junit=FILE           Write JUnit XML report to FILE\n"

@@ -40,7 +40,7 @@ protected void _fail(string msg, void|string _loc) {
   throw(AssertionError(msg, loc));
 }
 
-// ── Equality ──────────────────────────────────────────────────────────
+// ── Equality assertions ──────────────────────────────────────────────
 
 //! Produce a structured diff for complex values (arrays, mappings).
 //! Returns a string with line-by-line differences, or empty string if not applicable.
@@ -183,7 +183,7 @@ void assert_not_same(mixed expected, mixed actual, void|string msg, void|string 
   if (expected == actual)
     _fail(_msg(msg, "Expected different identity but both are the same object: %O", expected), _loc);
 }
-// ── Boolean ───────────────────────────────────────────────────────────
+// ── Boolean assertions ──────────────────────────────────────────────
 
 //! Assert that @expr{val@} is truthy.
 //!
@@ -217,7 +217,7 @@ void assert_false(mixed val, void|string msg, void|string _loc) {
     _fail(_msg(msg, "Expected falsy value but got %O", val), _loc);
 }
 
-// ── Null / Undefined ──────────────────────────────────────────────────
+// ── Null assertions ─────────────────────────────────────────────────
 
 //! Assert that @expr{val@} is @expr{0@} (zero-type 1, i.e. UNDEFINED/missing).
 //!
@@ -270,7 +270,7 @@ void assert_undefined(mixed val, void|string msg, void|string _loc) {
     _fail(_msg(msg, "Expected UNDEFINED but got %O (zero_type=%d)", val, zero_type(val)), _loc);
 }
 
-// ── Comparison ────────────────────────────────────────────────────────
+// ── Comparison assertions ───────────────────────────────────────────
 
 //! Assert @expr{a > b@}.
 //!
@@ -344,7 +344,7 @@ void assert_lte(mixed a, mixed b, void|string msg, void|string _loc) {
     _fail(_msg(msg, "Expected %O <= %O", a, b), _loc);
 }
 
-// ── Containment ───────────────────────────────────────────────────────
+// ── Membership assertions ──────────────────────────────────────────
 
 //! Assert that @expr{needle@} is found in @expr{haystack@}.
 //! Works for strings (substring), arrays (@expr{search()@}),
@@ -380,7 +380,7 @@ void assert_contains(mixed needle, mixed haystack, void|string msg, void|string 
     _fail(_msg(msg, "Expected %O to contain %O", haystack, needle), _loc);
 }
 
-// ── Exceptions ────────────────────────────────────────────────────────
+// ── Exception assertions ────────────────────────────────────────────
 
 //! Assert that calling @expr{fn@} throws an error.
 //! If @expr{error_type@} is provided, the error must be of that program.
@@ -551,7 +551,7 @@ mixed assert_throws_message(void|program error_type, string expected_message,
   return err;
 }
 
-// ── Collection ─────────────────────────────────────────────────────────
+// ── Collection assertions ──────────────────────────────────────────
 
 //! Assert that @expr{checker@} returns true for every element in @expr{items@}.
 //!
@@ -657,7 +657,7 @@ void assert_has_size(mixed collection, int expected_size,
   }
 }
 
-// ── Explicit failure ──────────────────────────────────────────────────
+// ── Miscellaneous assertions ────────────────────────────────────────
 
 //! Fail the test unconditionally with the given message.
 //!
@@ -671,7 +671,6 @@ void assert_fail(void|string msg, void|string _loc) {
   _fail(msg || "Test explicitly failed", _loc);
 }
 
-// ── Skip ─────────────────────────────────────────────────────────────
 
 //! Skip the current test with a reason string.
 //!
@@ -698,7 +697,7 @@ void skip(string reason) {
   throw(SkipError(reason));
 }
 
-// ── Type checking ─────────────────────────────────────────────────────
+// ── Type checking assertions ───────────────────────────────────────
 
 //! Assert that @expr{val@} is of type @expr{expected_type@}.
 //!
@@ -725,7 +724,7 @@ void assert_type(mixed expected_type, mixed val, void|string msg, void|string _l
   }
 }
 
-// ── String matching ───────────────────────────────────────────────────
+// ── String matching assertions ─────────────────────────────────────
 
 //! Assert that @expr{str@} matches the regex @expr{pattern@}.
 //!
@@ -747,7 +746,7 @@ void assert_match(string pattern, string str, void|string msg, void|string _loc)
     _fail(_msg(msg, "Expected %O to match pattern %O", str, pattern), _loc);
 }
 
-// ── Numeric tolerance ─────────────────────────────────────────────────
+// ── Numeric tolerance assertions ───────────────────────────────────
 
 //! Assert that @expr{expected@} and @expr{actual@} are within
 //! @expr{tolerance@} of each other.
