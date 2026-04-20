@@ -17,8 +17,9 @@ PUnit is a JUnit-inspired testing framework written in Pike (8.0.1116+). The fra
 - Method filtering: `pike -M . run_tests.pike --filter=test_add* tests/`
 - Timeout: `pike -M . run_tests.pike --timeout=10 tests/`
 - Randomized order: `pike -M . run_tests.pike --randomize --seed=42 tests/`
+- Retry failed tests: `pike -M . run_tests.pike --retry=2 tests/`
 
-Expected result: 41 passed, 3 skipped, exit code 0.
+Expected result: 130 passed, 4 skipped, exit code 0.
 
 ## Architecture
 
@@ -107,5 +108,5 @@ Doc-only changes do NOT trigger this checklist.
 ## PR instructions
 
 - Title format: descriptive summary of the change
-- Run `pike -M . run_tests.pike tests/` before committing -- all 41 tests must pass
+- Run `pike -M . run_tests.pike tests/` before committing -- all 130 tests must pass
 - If adding new assertions or framework features, add corresponding test cases

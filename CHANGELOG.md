@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `--retry=N` flag — automatically retry failed tests up to N times
+- Thread cleanup on timeout — timed-out tests no longer leak threads
+- Wrong-arity detection — tests with incorrect `test_data` arity are reported as errors
+- `CONTRIBUTING.md` — standard contributing guide
+- `.github/workflows/release.yml` — tag-triggered release workflow
+- Comprehensive test suite (9 new test files):
+  - `RetryEdgeCases.pike` — retry behavior edge cases
+  - `TimeoutEdgeCases.pike` — timeout edge cases
+  - `AssertThrowsEdgeCases.pike` — exception assertion edge cases
+  - `AssertionFailureTests.pike` — 28 failure mode tests
+  - `DiscoveryTests.pike` — compilation and discovery tests
+  - `ErrorReportingTests.pike` — error type and format tests
+  - `FilterTagTests.pike` — tag and filter tests
+  - `ReporterTests.pike` — reporter output tests
+  - `RetryTests.pike` — basic retry test
+
+### Changed
+- `TestSuite.pike` — retry logic, thread cleanup on timeout, wrong-arity detection
+- `TestRunner.pike` — `retry` option passthrough
+- `run_tests.pike` — added `--retry=N` CLI flag
+- `PUnit.pmod/Assertions.pmod` — section comment normalization
+- `.github/workflows/docs-check.yml` — removed `continue-on-error: true`
+
 ## [1.1.0] - 2026-04-20
 
 ### Added

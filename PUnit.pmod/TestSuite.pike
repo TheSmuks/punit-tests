@@ -37,6 +37,7 @@ protected array(string) _exclude_tags = ({});
 protected string _method_filter;
 protected int _stop_on_failure;
 protected int _strict;
+protected int _retry = 0;
 protected int _timeout = 0;
 protected int _randomize = 0;
 protected int _seed = 0;
@@ -64,6 +65,8 @@ protected array(string) _validation_warnings = ({});
 //!   If non-zero, randomize test execution order.
 //! @param seed
 //!   PRNG seed for reproducible random ordering.
+//! @param retry
+//!   Number of times to retry failed tests (0 = no retry).
 void create(string name, object rep,
           void|array(string) inc_tags,
           void|array(string) exc_tags,
@@ -72,7 +75,8 @@ void create(string name, object rep,
           void|int strict,
           void|int timeout,
           void|int randomize,
-          void|int seed) {
+          void|int seed,
+          void|int retry) {
   _suite_name = name;
   _reporter = rep;
   _include_tags = inc_tags || ({});
@@ -84,6 +88,7 @@ void create(string name, object rep,
   _randomize = randomize || 0;
   _seed = seed || 0;
   _prng_state = _seed;
+  _retry = retry || 0;
 }
 
 //! Add a compiled class to the suite.
@@ -261,6 +266,39 @@ Results run() {
       break;
   }
 
+
+  // Retry failed tests
+  if (_retry > 0) {
+    for (int attempt = 0; attempt < _retry; attempt++) {
+      // Find failed/error results
+      array(int) failed_idx = ({});
+      for (int i = 0; i < sizeof(results->test_results); i++) {
+        .TestResult tr = results->test_results[i];
+        if (tr->is_fail() || tr->is_error()) {
+          failed_idx += ({ i });
+        }
+      }
+      if (sizeof(failed_idx) == 0) break;
+
+      foreach (failed_idx; ; int idx) {
+        .TestResult old = results->test_results[idx];
+        // Find the class for this test
+        mapping cls;
+        foreach (_classes; ; mapping c) {
+          if (c->class_name == old->class_name) { cls = c; break; }
+        }
+        if (!cls) continue;
+
+        .TestResult retry_tr = _rerun_test(cls, old->test_name);
+        if (retry_tr->is_pass()) {
+          results->test_results[idx] = retry_tr;
+          if (old->is_error()) results->errors--;
+          else results->failed--;
+          results->passed++;
+        }
+      }
+    }
+  }
   float suite_end = gethrtime() / 1000.0;
   results->elapsed_ms = suite_end - suite_start;
 
@@ -510,13 +548,14 @@ protected void _run_class(mapping cls, Results results) {
       // Run the test, with optional timeout
       mixed test_error;
       int timed_out = 0;
+      Thread.Thread test_thread;
 
       if (_timeout > 0) {
         // Thread-based timeout: run test in a thread, poll for completion
         Thread.Mutex done_mtx = Thread.Mutex();
         int test_done = 0;
 
-        Thread.Thread test_thread = Thread.Thread(lambda() {
+        test_thread = Thread.Thread(lambda() {
           mixed err = catch { _invoke_test(instance, method, cls->test_data); };
           Thread.MutexKey key = done_mtx->lock();
           test_error = err;
@@ -543,6 +582,18 @@ protected void _run_class(mapping cls, Results results) {
       float elapsed = (gethrtime() / 1000.0) - start;
 
       if (timed_out) {
+        // Kill and join the test thread to prevent zombie accumulation.
+        // Pike thread kill() sends SIGTERM; wait() reaps the thread.
+        if (functionp(test_thread->kill)) {
+          test_thread->kill();
+        }
+        // Bounded wait: poll for thread death up to 1s
+        float join_deadline = gethrtime() / 1000.0 + 1000.0;
+        while (gethrtime() / 1000.0 < join_deadline) {
+          // Attempt a non-blocking status check via gethrvtime()
+          if (!test_thread->status()->running) break;
+          sleep(0.05);
+        }
         // Timed out — report as error
         string msg = sprintf("Test timed out after %ds", _timeout);
         tr->set_error(elapsed, msg, "");
@@ -570,6 +621,11 @@ protected void _run_class(mapping cls, Results results) {
         } else {
           string msg = _format_error(test_error);
           string loc = _extract_location(test_error);
+
+          // Detect wrong-arity errors and provide a clearer message
+          if (has_value(msg, "arguments") && has_value(msg, "Expected")) {
+            msg = sprintf("Method %s has wrong number of arguments: %s", method, msg);
+          }
 
           tr->set_error(elapsed, msg, loc);
           results->errors++;
@@ -613,6 +669,100 @@ protected void _run_class(mapping cls, Results results) {
   // Call teardown_class() if it exists
   if (functionp(instance->teardown_class))
     instance->teardown_class();
+}
+
+//! Re-run a single test method within its class context.
+//!
+//! @param cls
+//!   Class info mapping with keys: class_name, instance, test_data.
+//! @param method
+//!   Test method name (possibly with [N] suffix).
+//! @returns
+//!   A TestResult for the re-run.
+protected .TestResult _rerun_test(mapping cls, string method) {
+  object instance = cls->instance;
+  string class_name = cls->class_name;
+  .TestResult tr = .TestResult(method, class_name);
+
+  float start = gethrtime() / 1000.0;
+  int setup_ok = 1;
+
+  if (mixed e = catch {
+    if (functionp(instance->setup))
+      instance->setup();
+  }) {
+    setup_ok = 0;
+  }
+
+  if (setup_ok) {
+    mixed test_error;
+    int timed_out = 0;
+
+    if (_timeout > 0) {
+      // Thread-based timeout for retry, same pattern as _run_test
+      Thread.Mutex done_mtx = Thread.Mutex();
+      int test_done = 0;
+      Thread.Thread test_thread = Thread.Thread(lambda() {
+        mixed err = catch { _invoke_test(instance, method, cls->test_data); };
+        Thread.MutexKey key = done_mtx->lock();
+        test_error = err;
+        test_done = 1;
+        destruct(key);
+      });
+
+      float deadline = gethrtime() / 1000.0 + (float)_timeout * 1000.0;
+      while (1) {
+        Thread.MutexKey key = done_mtx->lock();
+        if (test_done) { destruct(key); break; }
+        destruct(key);
+        if (gethrtime() / 1000.0 >= deadline) {
+          timed_out = 1;
+          break;
+        }
+        sleep(0.02);
+      }
+
+      if (timed_out) {
+        if (functionp(test_thread->kill)) {
+          test_thread->kill();
+        }
+        float join_deadline = gethrtime() / 1000.0 + 1000.0;
+        while (gethrtime() / 1000.0 < join_deadline) {
+          if (!test_thread->status()->running) break;
+          sleep(0.05);
+        }
+      }
+    } else {
+      test_error = catch { _invoke_test(instance, method, cls->test_data); };
+    }
+
+    float elapsed = (gethrtime() / 1000.0) - start;
+
+    if (timed_out) {
+      string msg = sprintf("Test timed out after %ds (retry)", _timeout);
+      tr->set_error(elapsed, msg, "");
+    } else if (test_error) {
+      if (_is_assertion_error(test_error)) {
+        tr->set_failed(elapsed, _format_error(test_error),
+                       _extract_location(test_error));
+      } else {
+        tr->set_error(elapsed, _format_error(test_error),
+                      _extract_location(test_error));
+      }
+    } else {
+      tr->set_passed(elapsed);
+    }
+  } else {
+    float elapsed = (gethrtime() / 1000.0) - start;
+    tr->set_error(elapsed, "setup() failed on retry", "");
+  }
+
+  if (mixed te = catch {
+    if (functionp(instance->teardown))
+      instance->teardown();
+  }) { }
+
+  return tr;
 }
 
 
