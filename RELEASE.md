@@ -59,3 +59,22 @@ Use this structure in the GitHub release body:
 ## Pre-release Tags
 
 Use `-alpha.N`, `-beta.N`, `-rc.N` suffixes for pre-release versions (e.g., `1.2.0-beta.1`). Mark the GitHub release as a pre-release. These do not require the full checklist — but tests must still pass.
+
+## Documentation maintenance protocol
+
+When any change lands on `main` that modifies:
+
+- **Public API** (new functions, changed signatures, removed exports)
+- **File structure** (new files, renamed files, removed files)
+- **Test baseline** (new tests, changed skip counts)
+- **Architecture** (new components, changed data flow, new extension points)
+
+The following MUST be updated in the same commit:
+
+1. **AGENTS.md** — project overview, architecture list, setup commands, expected test baseline
+2. **SKILL.md** (`.agents/skills/*/SKILL.md`) — patterns, reference tables, verification checklist
+3. **ARCHITECTURE.md** — project structure tree, component descriptions, data flow diagram
+
+**Doc-only changes** (comment rewrites, typo fixes) do NOT require a full doc sweep.
+
+**Version bumps** MUST verify all three docs reflect the new version.

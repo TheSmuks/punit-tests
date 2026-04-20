@@ -30,6 +30,17 @@ PUnit.pmod/
   JUnitReporter.pike -- JUnit XML output
   TestResult.pike    -- per-test result container
   Colors.pmod        -- ANSI color helpers
+  Version.pmod        -- version constant ("1.1.0")
+
+  # Granular headers for selective import:
+  equal.h              -- assert_equal, assert_not_equal, assert_same, assert_not_same
+  boolean.h            -- assert_true, assert_false
+  comparison.h         -- assert_gt, assert_lt, assert_gte, assert_lte
+  null.h               -- assert_null, assert_not_null, assert_undefined
+  membership.h         -- assert_contains, assert_match
+  exception.h          -- assert_throws, assert_throws_fn, assert_no_throw, assert_throws_message
+  collection.h         -- assert_each, assert_contains_only, assert_has_size
+  misc.h               -- assert_fail, assert_type, assert_approx_equal
 ```
 
 ## Adding a new assertion
@@ -54,6 +65,56 @@ The last two parameters must always be `void|string msg, void|string _loc`. `_lo
 Use `PUnit.assert_XXXX` (fully qualified) to avoid recursive macro expansion. Use `__VA_ARGS__` for assertions that take variable argument counts, or list the named parameters for fixed-arity ones.
 
 3. Update the assertion table in `README.md`.
+
+
+## Assertion reference (28 functions)
+
+All assertions live in `Assertions.pmod` and are exposed via `macros.h`.
+
+### Equality (equal.h)
+- `assert_equal(actual, expected, msg, _loc)`
+- `assert_not_equal(actual, expected, msg, _loc)`
+- `assert_same(actual, expected, msg, _loc)` -- reference identity
+- `assert_not_same(actual, expected, msg, _loc)`
+
+### Boolean (boolean.h)
+- `assert_true(value, msg, _loc)`
+- `assert_false(value, msg, _loc)`
+
+### Comparison (comparison.h)
+- `assert_gt(actual, expected, msg, _loc)`
+- `assert_lt(actual, expected, msg, _loc)`
+- `assert_gte(actual, expected, msg, _loc)`
+- `assert_lte(actual, expected, msg, _loc)`
+
+### Null / undefined (null.h)
+- `assert_null(value, msg, _loc)`
+- `assert_not_null(value, msg, _loc)`
+- `assert_undefined(value, msg, _loc)`
+
+### Membership (membership.h)
+- `assert_contains(collection, item, msg, _loc)`
+- `assert_match(pattern, subject, msg, _loc)`
+
+### Exception (exception.h)
+- `assert_throws(error_type, fn, msg, _loc)` -- asserts fn() throws error_type
+- `assert_throws_fn(error_type, fn, args, msg, _loc)` -- passes args to fn
+- `assert_no_throw(fn, msg, _loc)` -- asserts fn() completes without error
+- `assert_throws_message(error_type, expected_msg, fn, msg, _loc)` -- asserts throw and message substring
+
+### Collection (collection.h)
+- `assert_each(collection, checker_fn, msg, _loc)` -- checker_fn must return true for every element
+- `assert_contains_only(collection, allowed, msg, _loc)` -- every element is in allowed set
+- `assert_has_size(collection, expected_size, msg, _loc)` -- checks sizeof(collection)
+
+### Misc (misc.h)
+- `assert_fail(msg, _loc)` -- unconditional failure
+- `assert_type(value, expected_type, msg, _loc)` -- checks typeof(value)
+- `assert_approx_equal(actual, expected, tolerance, msg, _loc)` -- float comparison with tolerance
+
+### Skipping tests
+- `skip(string reason)` -- call inside a test to skip it; throws `SkipError`
+- `SkipError` class in `Error.pmod` -- caught by TestSuite to report skipped tests
 
 ## Parameterized test expansion (TestSuite.pike)
 
@@ -149,4 +210,4 @@ pike -M . run_tests.pike --timeout=2 tests/
 pike -M . run_tests.pike --randomize --seed=42 tests/
 ```
 
-Expected: 35 passed, 1 skipped, exit code 0 on all commands.
+Expected: 41 passed, 3 skipped, exit code 0 on all commands.
