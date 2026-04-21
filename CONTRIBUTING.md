@@ -41,3 +41,13 @@ All PRs require review before merge. Reviewers check for:
 - Test coverage
 - Documentation accuracy
 - Consistent code style
+
+## CI Checks
+
+The following automated checks run on every pull request:
+
+- **Test Suite** (`ci.yml`) -- runs `pike -M . run_tests.pike tests/` across multiple Pike versions
+- **Docs Sync** (`docs-check.yml`) -- warns when source files change without corresponding doc updates
+- **Commit Lint** (`commit-lint.yml`) -- enforces conventional commit format on PR titles and commit messages
+- **Changelog Check** (`changelog-check.yml`) -- requires CHANGELOG.md updates on PRs (add `skip-changelog` label for trivial changes)
+- **Blob Size Policy** (`blob-size-policy.yml`) -- rejects files larger than 1MB

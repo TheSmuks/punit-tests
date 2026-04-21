@@ -1,0 +1,45 @@
+name: Commit Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  lint-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Lint PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if ! echo "$PR_TITLE" | grep -qE '^(feat|fix|docs|refactor|test|chore|ci|perf|style|revert)(\([a-z]+\))?: .+'; then
+            echo "ERROR: PR title does not follow conventional commits format."
+            echo "Expected: <type>(<scope>): <description>"
+            echo "Types: feat, fix, docs, refactor, test, chore, ci, perf, style, revert"
+            echo "Scopes (optional): assert, runner, suite, reporter, lifecycle, error"
+            echo "Got: $PR_TITLE"
+            exit 1
+          fi
+
+      - name: Lint commit messages
+        run: |
+          BASE_SHA=$(git merge-base origin/${{ github.base_ref }} HEAD 2>/dev/null || echo "")
+          if [ -n "$BASE_SHA" ]; then
+            COMMITS=$(git log --format="%H %s" "$BASE_SHA"..HEAD)
+          else
+            COMMITS=$(git log --format="%H %s" origin/${{ github.base_ref }}..HEAD)
+          fi
+
+          EXIT_CODE=0
+          while read -r sha msg; do
+            if ! echo "$msg" | grep -qE '^(feat|fix|docs|refactor|test|chore|ci|perf|style|revert)(\\([a-z]+\\))?: .+'; then
+              echo "ERROR: Commit $sha does not follow conventional commits format."
+              echo "  Message: $msg"
+              echo "  Expected: <type>(<scope>): <description>"
+              EXIT_CODE=1
+            fi
+          done <<< "$COMMITS"
+          exit $EXIT_CODE

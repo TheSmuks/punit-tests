@@ -1,0 +1,28 @@
+version: 1
+
+# PUnit architecture quality thresholds
+# Thresholds calibrated to current codebase p95 values:
+#   max file: 975 lines (TestSuite.pike), p95 ~772 (Assertions.pmod)
+#   max exports: 28 functions (Assertions.pmod)
+
+thresholds:
+  max_file_lines:
+    soft: 1000
+    hard: 1200
+  max_function_lines: 80
+  max_exports: 30
+  max_nesting_depth: 4
+
+patterns:
+  source:
+    - "*.pike"
+    - "*.pmod"
+    - "*.h"
+  test:
+    - "tests/**"
+  scripts:
+    - "scripts/**"
+
+ignore:
+  - "tests/**"
+  - "scripts/**"

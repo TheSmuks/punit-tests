@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- `.editorconfig` — editor consistency for Pike, YAML, Markdown files
+- `.gitattributes` — line ending normalization (LF) for Pike source files
+- `.architecture.yml` — code quality thresholds documented
+- `.template-version` — tracks ai-project-template v0.2.0
+- `docs/decisions/` — architectural decision record template and initial ADR
+- `.omp/agents/` — code-reviewer, adr-writer, changelog-updater agent definitions
+- `.omp/settings.json` — project configuration
+- `.github/CODEOWNERS` — default code ownership
+- `.github/PULL_REQUEST_TEMPLATE.md` — structured PR template
+- `.github/ISSUE_TEMPLATE/` — bug report and feature request templates
+- `.github/SECURITY.md` — security reporting policy
+- `.github/dependabot.yml` — weekly GitHub Actions dependency updates
+- `.github/workflows/commit-lint.yml` — conventional commit enforcement
+- `.github/workflows/changelog-check.yml` — changelog entry requirement on PRs
+- `.github/workflows/blob-size-policy.yml` — large file rejection (> 1MB)
 - Category sub-modules for selective assertion imports (`import PUnit.Equal`, `import PUnit.Boolean`, etc.)
 - 8 sub-module files: `Equal.pmod`, `Boolean.pmod`, `Comparison.pmod`, `Null.pmod`, `Membership.pmod`, `Exception.pmod`, `Collection.pmod`, `Misc.pmod`
 - `scripts/generate_macros.pike` — auto-generates all granular `.h` files from `Assertions.pmod`

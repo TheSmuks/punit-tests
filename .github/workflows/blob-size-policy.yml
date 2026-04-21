@@ -1,0 +1,45 @@
+name: Blob Size Policy
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-large-files:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for large files
+        run: |
+          MAX_SIZE=1048576  # 1MB
+          FOUND_LARGE=0
+
+          # Check files changed in this PR
+          FILES=$(git diff --name-only --diff-filter=ACM origin/${{ github.base_ref }}...HEAD)
+
+          if [ -z "$FILES" ]; then
+            echo "No files to check."
+            exit 0
+          fi
+
+          while read -r file; do
+            if [ -f "$file" ]; then
+              SIZE=$(stat -c%s "$file" 2>/dev/null || echo "0")
+              if [ "$SIZE" -gt "$MAX_SIZE" ]; then
+                SIZE_MB=$(echo "scale=2; $SIZE / 1048576" | bc)
+                echo "ERROR: $file is ${SIZE_MB}MB (limit: 1MB)"
+                FOUND_LARGE=1
+              fi
+            fi
+          done <<< "$FILES"
+
+          if [ "$FOUND_LARGE" -eq 1 ]; then
+            echo ""
+            echo "Large files detected. Use Git LFS or reconsider whether the file belongs in the repository."
+            exit 1
+          fi
+
+          echo "All files are within the size limit."

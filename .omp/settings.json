@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "project": {
+    "name": "PUnit",
+    "language": "pike",
+    "test_command": "pike -M . run_tests.pike tests/"
+  }
+}

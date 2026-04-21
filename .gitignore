@@ -5,3 +5,15 @@ junit-report.xml
 
 .pike-env/
 modules/
+
+# Editor / OS artifacts
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Reports
+junit-report.xml
+report.xml
+tap-output.txt

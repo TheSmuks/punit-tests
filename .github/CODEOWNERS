@@ -1,0 +1,6 @@
+# CODEOWNERS
+# These owners will be automatically requested for review
+# when a PR touches files in their sections.
+
+# Default owners for everything
+* @TheSmuks

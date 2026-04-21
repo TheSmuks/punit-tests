@@ -1,0 +1,54 @@
+name: Feature Request
+description: Suggest a new feature for PUnit
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: "I'm frustrated when ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the feature you'd like
+      placeholder: "It would be useful if PUnit could ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Affected Area
+      description: Which part of PUnit does this affect?
+      options:
+        - Assertions (PUnit.pmod/Assertions.pmod)
+        - Test Lifecycle (setup/teardown)
+        - Test Runner (CLI, flags)
+        - Test Suite (discovery, filtering)
+        - Reporters (output formats)
+        - Error Handling
+        - CI/Tooling
+        - Documentation
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Other approaches you've considered
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: Examples from other frameworks, code snippets, etc.
+    validations:
+      required: false
