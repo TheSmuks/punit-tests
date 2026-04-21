@@ -1,6 +1,7 @@
 {
   "name": "PUnit",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "JUnit-inspired testing framework for Pike",
-  "source": "github.com/thesmuks/punit-tests"
+  "source": "github.com/thesmuks/punit-tests",
+  "dependencies": {}
 }
