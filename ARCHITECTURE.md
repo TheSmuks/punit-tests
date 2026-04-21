@@ -36,7 +36,8 @@ PUnit.pmod/
   TAPReporter.pike       TAP v13 output
   JUnitReporter.pike     JUnit XML output
   Colors.pmod            ANSI color helpers
-run_tests.pike              CLI entry point — parses flags, delegates to TestRunner
+  Summary.pmod           Shared summary formatting for console reporters
+run_tests.pike              CLI entry point — parses flags via Getopt, delegates to TestRunner
 tests/
   ExampleTests.pike      Core assertion tests (41 test methods, 3 skipped)
   LifecycleTests.pike    setup/teardown lifecycle tests
@@ -93,7 +94,7 @@ TestResult                    Error.pmod
 
 ### Entry Point (`run_tests.pike`)
 
-CLI argument parser and orchestrator. Parses command-line flags and delegates to TestRunner.
+CLI argument parser and orchestrator. Uses `Getopt.find_all_options` for flag parsing and delegates to TestRunner.
 
 Supported flags: `-v`, `--tap`, `--junit`, `--tag`, `--filter`, `--strict`, `--timeout`, `--randomize`, `--seed`, `--list`, `--no-color`.
 
@@ -148,7 +149,7 @@ Four implementations inheriting from the `Reporter` base class, which defines 8 
 | `DotReporter` | Single character per test (`.FES`) + summary. Default. |
 | `VerboseReporter` | Per-test status line with name and details. |
 | `TAPReporter` | TAP v13 compatible output. |
-| `JUnitReporter` | JUnit XML file written to disk. |
+| `JUnitReporter` | JUnit XML file written via `Parser.XML.Tree`. |
 
 Callbacks: `suite_started`, `test_started`, `test_passed`, `test_failed`, `test_error`, `test_skipped`, `suite_finished`, `run_finished`.
 
@@ -157,12 +158,13 @@ Callbacks: `suite_started`, `test_started`, `test_passed`, `test_failed`, `test_
 - **Colors.pmod** — 10 ANSI color helper functions with global enable/disable toggle.
 - **Version.pmod** — exports `constant version = "1.1.0"`.
 - **module.pmod** — re-exports `Assertions` and `Version` via inherit so `import PUnit` works.
+- **Summary.pmod** — shared summary formatting for DotReporter and VerboseReporter.
 
 ## Data Flow
 
 Full test run lifecycle:
 
-1. CLI parses arguments into an options mapping.
+1. CLI parses arguments via `Getopt.find_all_options` into an options mapping.
 2. `TestRunner.run()` scans directories for `.pike` files.
 3. Each file is read and compiled via `compile_string(source, filename)`.
 4. Compiled programs are instantiated; objects with `test_*` methods are discovered.
@@ -237,7 +239,7 @@ pike -M . run_tests.pike tests/ --timeout=30 --randomize --seed=42
 
 ### Expected Baseline
 
-41 passed, 3 skipped, exit code 0.
+130 passed, 4 skipped, exit code 0.
 
 ### Commit Conventions
 

@@ -96,9 +96,7 @@ string format_location(mixed frame) {
     string file = frame[0];
     int line = frame[1];
     if (!stringp(file)) return "";
-    array parts = file / "/";
-    string basename = sizeof(parts) > 0 ? parts[-1] : file;
-    return basename + ":" + line;
+    return basename(file) + ":" + line;
   }
   return "";
 }

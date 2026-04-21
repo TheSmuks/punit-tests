@@ -23,8 +23,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `FilterTagTests.pike` — tag and filter tests
   - `ReporterTests.pike` — reporter output tests
   - `RetryTests.pike` — basic retry test
+- `PUnit.pmod/Summary.pmod` — shared summary formatting for console reporters
 
 ### Changed
+- `TestSuite.pike` — replaced hand-rolled LCG PRNG with `Nettle.Fortuna` for deterministic shuffle (`--randomize --seed`)
+- `TestSuite.pike` — tag dedup uses multiset union instead of foreach + `has_value`
+- `JUnitReporter.pike` — uses `Parser.XML.Tree` instead of manual `String.Buffer` XML construction
+- `run_tests.pike` — replaced hand-rolled CLI parser with `Getopt.find_all_options`
+- `Error.pmod` — uses `basename()` efun instead of manual `file / "/"` split
+- `TestRunner.pike` — uses `basename()` efun in `_extract_class_name`
+- `Assertions.pmod` — uses `(multiset)expected` cast instead of manual loop
 - `TestSuite.pike` — retry logic, thread cleanup on timeout, wrong-arity detection
 - `TestRunner.pike` — `retry` option passthrough
 - `run_tests.pike` — added `--retry=N` CLI flag

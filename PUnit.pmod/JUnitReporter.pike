@@ -152,9 +152,6 @@ void suite_finished(int passed, int failed, int errors,
 //!   Array of suite result mappings.
 //!
 void run_finished(array all_results) {
-  String.Buffer buf = String.Buffer();
-  buf->add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-
   // Calculate totals
   int total_tests = 0, total_failures = 0, total_errors = 0;
   float total_time = 0.0;
@@ -168,10 +165,18 @@ void run_finished(array all_results) {
     total_time += s->elapsed_s || 0.0;
   }
 
-  buf->add(sprintf(
-    "<testsuites name=\"PUnit\" tests=\"%d\" failures=\"%d\" "
-    "errors=\"%d\" time=\"%.3f\">\n",
-    total_tests, total_failures, total_errors, total_time));
+  // Build XML tree
+  Parser.XML.Tree.SimpleRootNode root = Parser.XML.Tree.SimpleRootNode();
+  root->add_child(Parser.XML.Tree.SimpleHeaderNode((["version": "1.0", "encoding": "UTF-8"])));
+
+  Parser.XML.Tree.SimpleElementNode testsuites =
+    Parser.XML.Tree.SimpleElementNode("testsuites", ([
+      "name": "PUnit",
+      "tests": (string)total_tests,
+      "failures": (string)total_failures,
+      "errors": (string)total_errors,
+      "time": sprintf("%.3f", total_time),
+    ]));
 
   foreach (suite_data; ; mapping s) {
     int s_tests = sizeof(s->test_results);
@@ -183,67 +188,75 @@ void run_finished(array all_results) {
       else if (tr->status == "error") s_errors++;
     }
 
-    buf->add(sprintf(
-      "  <testsuite name=\"%s\" tests=\"%d\" failures=\"%d\" "
-      "errors=\"%d\" time=\"%.3f\">\n",
-      _xml_escape(s->name), s_tests, s_failures, s_errors, s_time));
+    Parser.XML.Tree.SimpleElementNode suite_node =
+      Parser.XML.Tree.SimpleElementNode("testsuite", ([
+        "name": _sanitize(s->name),
+        "tests": (string)s_tests,
+        "failures": (string)s_failures,
+        "errors": (string)s_errors,
+        "time": sprintf("%.3f", s_time),
+      ]));
 
     foreach (s->test_results; ; mapping tr) {
-      string classname = s->name;
-      buf->add(sprintf(
-        "    <testcase name=\"%s\" classname=\"%s\" time=\"%.3f\"",
-        _xml_escape(tr->name), _xml_escape(classname), tr->time));
+      Parser.XML.Tree.SimpleElementNode tc =
+        Parser.XML.Tree.SimpleElementNode("testcase", ([
+          "name": _sanitize(tr->name),
+          "classname": _sanitize(s->name),
+          "time": sprintf("%.3f", tr->time),
+        ]));
 
       if (tr->status == "pass") {
-        buf->add("/>\n");
+        // Empty testcase — self-closing
       } else if (tr->status == "fail") {
-        buf->add(sprintf(">\n      <failure message=\"%s\" type=\"%s\">\n",
-                         _xml_escape(tr->message || ""),
-                         _xml_escape(tr->type || "AssertionError")));
-        buf->add(sprintf("        %s\n",
-                         _xml_escape(tr->message || "")));
+        Parser.XML.Tree.SimpleElementNode failure =
+          Parser.XML.Tree.SimpleElementNode("failure", ([
+            "message": _sanitize(tr->message || ""),
+            "type": _sanitize(tr->type || "AssertionError"),
+          ]));
+        String.Buffer fbuf = String.Buffer();
+        fbuf->add(_sanitize(tr->message || ""));
         if (sizeof(tr->location || "") > 0)
-          buf->add(sprintf("          at %s\n",
-                           _xml_escape(tr->location)));
-        buf->add("      </failure>\n    </testcase>\n");
+          fbuf->add(sprintf("\n          at %s", _sanitize(tr->location)));
+        failure->add_child(Parser.XML.Tree.SimpleTextNode(fbuf->get()));
+        tc->add_child(failure);
       } else if (tr->status == "error") {
-        buf->add(sprintf(">\n      <error message=\"%s\" type=\"%s\">\n",
-                         _xml_escape(tr->message || ""),
-                         _xml_escape(tr->type || "Error")));
-        buf->add(sprintf("        %s\n",
-                         _xml_escape(tr->message || "")));
+        Parser.XML.Tree.SimpleElementNode error_node =
+          Parser.XML.Tree.SimpleElementNode("error", ([
+            "message": _sanitize(tr->message || ""),
+            "type": _sanitize(tr->type || "Error"),
+          ]));
+        String.Buffer ebuf = String.Buffer();
+        ebuf->add(_sanitize(tr->message || ""));
         if (sizeof(tr->location || "") > 0)
-          buf->add(sprintf("          at %s\n",
-                           _xml_escape(tr->location)));
-        buf->add("      </error>\n    </testcase>\n");
+          ebuf->add(sprintf("\n          at %s", _sanitize(tr->location)));
+        error_node->add_child(Parser.XML.Tree.SimpleTextNode(ebuf->get()));
+        tc->add_child(error_node);
       } else if (tr->status == "skip") {
-        buf->add(">\n      <skipped/>\n    </testcase>\n");
+        tc->add_child(Parser.XML.Tree.SimpleElementNode("skipped", ([])));
       }
+
+      suite_node->add_child(tc);
     }
 
-    buf->add("  </testsuite>\n");
+    testsuites->add_child(suite_node);
   }
 
-  buf->add("</testsuites>\n");
-
-  Stdio.write_file(output_file, buf->get());
+  root->add_child(testsuites);
+  Stdio.write_file(output_file, root->render_xml());
 }
 
-//! Escape a string for safe inclusion in XML attribute values and text.
+//! Sanitize a string by removing control characters invalid in XML.
 //!
 //! @param s
-//!   Raw string to escape.
+//!   Raw string to sanitize.
 //! @returns
-//!   XML-safe string with entities escaped and control chars removed.
-protected string _xml_escape(string s) {
+//!   String with control characters removed (tab, newline, CR preserved).
+//! @note
+//!   Entity escaping is handled by @expr{Parser.XML.Tree@} automatically.
+//!   This only strips characters that are illegal in XML 1.0.
+protected string _sanitize(string s) {
   if (!s) return "";
-  s = replace(s, ({"&", "<", ">", "\"", "'"}),
-              ({"&amp;", "&lt;", "&gt;", "&quot;", "&apos;"}));
-  // Remove control characters except tab, newline, carriage return
-  string result = "";
-  foreach (s; int i; int c) {
-    if (c >= 0x20 || c == 0x09 || c == 0x0a || c == 0x0d)
-      result += sprintf("%c", c);
-  }
-  return result;
+  return (string)filter((array(int))s, lambda(int c) {
+    return c >= 0x20 || c == 0x09 || c == 0x0a || c == 0x0d;
+  });
 }

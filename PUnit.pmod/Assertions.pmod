@@ -608,8 +608,7 @@ void assert_each(array items, function checker,
 //!   If actual contains elements not in expected.
 void assert_contains_only(array expected, array actual,
                           void|string msg, void|string _loc) {
-  multiset allowed = (<>);
-  foreach (expected; ; mixed v) allowed[v] = 1;
+  multiset allowed = (multiset)expected;
   array extra = ({});
   foreach (actual; ; mixed v) {
     if (!allowed[v]) extra += ({ v });
