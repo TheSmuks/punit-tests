@@ -22,11 +22,12 @@
 // Each granular header provides #define macros that wrap PUnit.assert_*()
 // calls with automatic __FILE__:__LINE__ injection.
 
-#include <PUnit.pmod/equal.h>
 #include <PUnit.pmod/boolean.h>
-#include <PUnit.pmod/comparison.h>
-#include <PUnit.pmod/null.h>
-#include <PUnit.pmod/membership.h>
-#include <PUnit.pmod/exception.h>
-#include <PUnit.pmod/misc.h>
 #include <PUnit.pmod/collection.h>
+#include <PUnit.pmod/comparison.h>
+#include <PUnit.pmod/equal.h>
+#include <PUnit.pmod/exception.h>
+#include <PUnit.pmod/membership.h>
+#include <PUnit.pmod/misc.h>
+#include <PUnit.pmod/null.h>
+

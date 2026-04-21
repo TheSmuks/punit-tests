@@ -37,11 +37,23 @@ PUnit.pmod/
   JUnitReporter.pike     JUnit XML output
   Colors.pmod            ANSI color helpers
   Summary.pmod           Shared summary formatting for console reporters
+  Equal.pmod              Selective import: equality assertions
+  Boolean.pmod            Selective import: boolean assertions
+  Comparison.pmod         Selective import: comparison assertions
+  Null.pmod               Selective import: null/undefined assertions
+  Membership.pmod         Selective import: membership/pattern assertions
+  Exception.pmod          Selective import: exception assertions
+  Collection.pmod         Selective import: collection assertions
+  Misc.pmod               Selective import: miscellaneous assertions
 run_tests.pike              CLI entry point — parses flags via Getopt, delegates to TestRunner
+scripts/
+  generate_macros.pike    Auto-generates granular .h files from Assertions.pmod
+
 tests/
   ExampleTests.pike      Core assertion tests (41 test methods, 3 skipped)
   LifecycleTests.pike    setup/teardown lifecycle tests
   TimeoutTests.pike      Per-test timeout tests
+  SelectiveImportTests.pike Category sub-module verification (35 tests)
   Calculator.pike        Parameterized test example
   .HangTest.pike         Timeout edge case (dot-prefixed, hidden)
   .BadSyntax.pike        Compilation error handling (dot-prefixed, hidden)
@@ -120,6 +132,11 @@ Supported flags: `-v`, `--tap`, `--junit`, `--tag`, `--filter`, `--strict`, `--t
 
 Each function accepts an optional `void|string msg` and `void|string _loc`. Granular headers (`.h` files) inject `__FILE__:__LINE__` via preprocessor macros, providing exact source locations on failure without requiring manual location arguments.
 
+Category sub-modules (`Equal.pmod`, `Boolean.pmod`, etc.) allow selective imports:
+`import PUnit.Equal` brings only equality assertions into scope. Each sub-module
+inherits `.Assertions`, overrides `[]`/`->` to filter visibility, and provides
+`_indices()` returning only allowed names. Full `import PUnit` is unchanged.
+
 ### Test Lifecycle
 
 `TestCase` provides 4 lifecycle hooks:
@@ -182,8 +199,8 @@ Full test run lifecycle:
 ### New Assertions
 
 1. Add a function in `Assertions.pmod`. The last two parameters must be `void|string msg, void|string _loc`.
-2. Add a macro in the appropriate granular `.h` file.
-3. If a new category header is needed, add it and update `macros.h` (the umbrella header) to include it.
+2. Add a macro entry in `scripts/generate_macros.pike` (under the appropriate category) and run `pike scripts/generate_macros.pike` to regenerate all `.h` files.
+3. If a new category is needed, add a `PUnit.pmod/<Category>.pmod` file following the existing pattern, add the category to the generator script, and update `macros.h` (auto-generated).
 
 ### New Reporters
 
@@ -239,7 +256,7 @@ pike -M . run_tests.pike tests/ --timeout=30 --randomize --seed=42
 
 ### Expected Baseline
 
-130 passed, 4 skipped, exit code 0.
+165 passed, 4 skipped, exit code 0.
 
 ### Commit Conventions
 
@@ -266,3 +283,4 @@ Scopes: `assert`, `runner`, `suite`, `reporter`, `lifecycle`, `error`
 - **Strict validation** — Treats `test_tags`/`skip_tests`/`test_data` key mismatches as errors rather than warnings.
 - **Granular headers** — Individual `.h` files for selective assertion imports.
 - **_loc parameter** — Exact source location (`__FILE__:__LINE__`) injected by preprocessor macros.
+- **Category sub-module** — A `.pmod` that inherits `.Assertions` and filters visibility for selective `import`.

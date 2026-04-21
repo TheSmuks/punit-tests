@@ -2,9 +2,13 @@
 //!
 //! @pre{#include <PUnit.pmod/equal.h>@}
 //!
-//! Provides: assert_equal, assert_not_equal
+//! Provides: assert_equal, assert_not_equal, assert_same, assert_not_same
 
 #define assert_equal(expected, actual) PUnit.assert_equal((expected), (actual), UNDEFINED, __FILE__ + ":" + __LINE__)
+
 #define assert_not_equal(expected, actual) PUnit.assert_not_equal((expected), (actual), UNDEFINED, __FILE__ + ":" + __LINE__)
-#define assert_same(expected, actual) PUnit.assert_same((expected), (actual), UNDEFINED, __FILE__ ":" __LINE__)
-#define assert_not_same(expected, actual) PUnit.assert_not_same((expected), (actual), UNDEFINED, __FILE__ ":" __LINE__)
+
+#define assert_same(expected, actual) PUnit.assert_same((expected), (actual), UNDEFINED, __FILE__ + ":" + __LINE__)
+
+#define assert_not_same(expected, actual) PUnit.assert_not_same((expected), (actual), UNDEFINED, __FILE__ + ":" + __LINE__)
+

@@ -4,6 +4,30 @@
 
 `module.pmod` re-exports `Assertions` and `Version` via `inherit`. `import PUnit` exposes all assert functions, `skip()`, `PUnit.version`, and error types.
 
+## Category sub-modules (selective imports)
+
+Eight `.pmod` files provide selective imports via `import PUnit.<Category>`:
+
+| File | Category | Functions |
+|------|----------|----------|
+| `Equal.pmod` | Equality | assert_equal, assert_not_equal, assert_same, assert_not_same |
+| `Boolean.pmod` | Boolean | assert_true, assert_false |
+| `Comparison.pmod` | Comparison | assert_gt, assert_lt, assert_gte, assert_lte |
+| `Null.pmod` | Null | assert_null, assert_not_null, assert_undefined |
+| `Membership.pmod` | Membership | assert_contains, assert_match |
+| `Exception.pmod` | Exception | assert_throws, assert_throws_fn, assert_no_throw, assert_throws_message |
+| `Collection.pmod` | Collection | assert_each, assert_contains_only, assert_has_size |
+| `Misc.pmod` | Misc | assert_fail, assert_type, assert_approx_equal |
+
+Each sub-module:
+- `inherit .Assertions` to get all assertion functions
+- Overrides `[]` and `->` to return `UNDEFINED` for non-allowed names
+- Overrides `_indices()` to return only allowed names
+- This means `import PUnit.Equal` brings only equality assertions into scope
+
+`import PUnit` (full import) is unchanged — all functions remain available.
+
+
 ## Assertion function contract
 
 Every assertion function signature ends with `void|string msg, void|string _loc`:

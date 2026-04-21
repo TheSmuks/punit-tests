@@ -36,7 +36,7 @@ void test_add(mapping row) {
 
 ## Baseline
 
-**130 passed, 4 skipped, exit code 0**
+**165 passed, 4 skipped, exit code 0**
 
 This is the expected baseline for a clean test run:
 ```bash
@@ -53,6 +53,12 @@ If the baseline changes (new tests added, tests removed, skip count changes), up
    #include <PUnit.pmod/macros.h>
    import PUnit;
    inherit PUnit.TestCase;
+   ```
+
+For selective assertion imports, use `import PUnit.<Category>` instead of `import PUnit`:
+   ```pike
+   import PUnit.Equal;     // assert_equal, assert_not_equal, assert_same, assert_not_same
+   import PUnit.Boolean;   // assert_true, assert_false
    ```
 3. Add `test_*` methods
 4. Run `pike -M . run_tests.pike tests/` to verify

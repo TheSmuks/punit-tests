@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Category sub-modules for selective assertion imports (`import PUnit.Equal`, `import PUnit.Boolean`, etc.)
+- 8 sub-module files: `Equal.pmod`, `Boolean.pmod`, `Comparison.pmod`, `Null.pmod`, `Membership.pmod`, `Exception.pmod`, `Collection.pmod`, `Misc.pmod`
+- `scripts/generate_macros.pike` — auto-generates all granular `.h` files from `Assertions.pmod`
+- `tests/SelectiveImportTests.pike` — 35 tests verifying category sub-module behavior
 - `--retry=N` flag — automatically retry failed tests up to N times
 - Thread cleanup on timeout — timed-out tests no longer leak threads
 - Wrong-arity detection — tests with incorrect `test_data` arity are reported as errors
@@ -38,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `run_tests.pike` — added `--retry=N` CLI flag
 - `PUnit.pmod/Assertions.pmod` — section comment normalization
 - `.github/workflows/docs-check.yml` — removed `continue-on-error: true`
+
+### Fixed
+- `PUnit.pmod/equal.h` — fixed `assert_same`/`assert_not_same` using C-style string concatenation instead of Pike `+` operator
 
 ## [1.1.0] - 2026-04-20
 
