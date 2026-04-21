@@ -41,7 +41,7 @@ protected int _retry = 0;
 protected int _timeout = 0;
 protected int _randomize = 0;
 protected int _seed = 0;
-protected int _prng_state = 0;
+protected object _prng;
 protected array(string) _validation_warnings = ({});
 //! Create a new test suite.
 //!
@@ -87,7 +87,8 @@ void create(string name, object rep,
   _timeout = timeout || 0;
   _randomize = randomize || 0;
   _seed = seed || 0;
-  _prng_state = _seed;
+  _prng = Nettle.Fortuna();
+  if (_seed) _prng->reseed(sprintf("%d", _seed));
   _retry = retry || 0;
 }
 
@@ -217,11 +218,9 @@ array(mapping) list_tests() {
     foreach (cls->test_methods; ; string method) {
       string base = _base_method(method);
       // Build merged tag list: explicit + inline
-      array(string) tags = explicit_tags[base] || explicit_tags[method] || ({});
-      foreach (_inline_tags(method); ; string t) {
-        if (!has_value(tags, t))
-          tags += ({ t });
-      }
+      multiset tag_set = (multiset)(explicit_tags[base] || explicit_tags[method] || ({}))
+                       | (multiset)_inline_tags(method);
+      array(string) tags = (array(string))tag_set;
       result += ({ ([
         "name": class_name + "::" + method,
         "method": method,
@@ -356,10 +355,9 @@ protected array(string) _discover_test_methods(object obj) {
 
   // Shuffle if randomized ordering requested
   if (_randomize) {
-    // Fisher-Yates shuffle using deterministic PRNG
+    // Fisher-Yates shuffle using deterministic Fortuna PRNG
     for (int i = sizeof(result) - 1; i > 0; i--) {
-      _prng_state = (_prng_state * 1103515245 + 12345) & 0x7fffffff;
-      int j = _prng_state % (i + 1);
+      int j = ((array(int))_prng->random_string(4))[0] % (i + 1);
       mixed tmp = result[i];
       result[i] = result[j];
       result[j] = tmp;
@@ -398,20 +396,16 @@ protected int _should_run(object instance, string method_name) {
       return 0;
   }
 
-  // Get merged tags for this method: inline + explicit
+  // Merge tags via multiset union — O(1) membership, automatic dedup
   mapping explicit_tags = _get_tags(instance);
-  array(string) test_tags = explicit_tags[base] || explicit_tags[method_name] || ({});
-  // Merge inline tags (avoid duplicates)
-  foreach (inline_tags; ; string t) {
-    if (!has_value(test_tags, t))
-      test_tags += ({ t });
-  }
+  multiset test_tags = (multiset)(explicit_tags[base] || explicit_tags[method_name] || ({}))
+                    | (multiset)inline_tags;
 
   // Check include tags: if tags are specified, test must have at least one
   if (sizeof(_include_tags) > 0) {
     int found = 0;
     foreach (_include_tags; ; string tag) {
-      if (has_value(test_tags, tag)) {
+      if (test_tags[tag]) {
         found = 1;
         break;
       }
@@ -422,7 +416,7 @@ protected int _should_run(object instance, string method_name) {
   // Check exclude tags: test must not have any excluded tag
   if (sizeof(_exclude_tags) > 0) {
     foreach (_exclude_tags; ; string tag) {
-      if (has_value(test_tags, tag))
+      if (test_tags[tag])
         return 0;
     }
   }

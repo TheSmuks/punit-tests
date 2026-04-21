@@ -118,28 +118,12 @@ void suite_finished(int passed, int failed, int errors,
 //!   Array of suite result mappings.
 //!
 void run_finished(array all_results) {
-  int total_passed = 0, total_failed = 0, total_errors = 0,
-      total_skipped = 0;
-  float total_ms = 0.0;
-
+  string summary = .Summary.format_summary(all_results);
+  int has_issues = 0;
   foreach (all_results; ; mapping result) {
-    total_passed += result->passed;
-    total_failed += result->failed;
-    total_errors += result->errors;
-    total_skipped += result->skipped;
-    total_ms += result->elapsed_ms;
+    if (result->failed > 0 || result->errors > 0) { has_issues = 1; break; }
   }
-
-  string summary = sprintf("Results: %d passed", total_passed);
-  if (total_failed > 0)
-    summary += sprintf(", %d failed", total_failed);
-  if (total_errors > 0)
-    summary += sprintf(", %d errors", total_errors);
-  if (total_skipped > 0)
-    summary += sprintf(", %d skipped", total_skipped);
-  summary += sprintf(" (%.1fms)", total_ms);
-
-  if (total_failed > 0 || total_errors > 0)
+  if (has_issues)
     write(bold_red(summary + "\n"));
   else
     write(bold_green(summary + "\n"));

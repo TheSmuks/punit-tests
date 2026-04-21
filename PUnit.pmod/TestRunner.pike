@@ -330,12 +330,11 @@ protected int _has_test_methods(object obj) {
 //! @returns
 //!   Display name derived from the file's basename.
 protected string _extract_class_name(string file) {
-  array parts = file / "/";
-  string basename = sizeof(parts) > 0 ? parts[-1] : file;
+  string bname = basename(file);
   // Remove .pike extension
-  if (has_suffix(basename, ".pike"))
-    basename = basename[..<5];
-  return basename;
+  if (has_suffix(bname, ".pike"))
+    bname = bname[..<5];
+  return bname;
 }
 
 //! Generate a suite name from a file path.
