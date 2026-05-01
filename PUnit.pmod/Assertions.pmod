@@ -770,3 +770,29 @@ void assert_approx_equal(float expected, float actual, float tolerance,
     _fail(_msg(msg, "Expected %O ≈ %O (tolerance %O, diff %O)",
                expected, actual, tolerance, diff), _loc);
 }
+
+// ── Process helpers ────────────────────────────────────────────────────
+
+//! Run a subprocess and capture its exit code, stdout, and stderr.
+//!
+//! Wraps @expr{Process.run()@} to return a convenient array instead of
+//! the raw mapping. This avoids the common footgun where
+//! @expr{Process.Process()->status()@} returns the process state constant
+//! (e.g. @expr{Process.EXITED = 2@}), not the exit code.
+//!
+//! @param args
+//!   Command-line arguments, starting with the executable.
+//!   Same format as @expr{Process.run()@}.
+//! @param options
+//!   Optional mapping passed through to @expr{Process.run()@}.
+//!   Supported keys include @expr{"cwd"@}, @expr{"env"@}, @expr{"stdin"@}.
+//! @returns
+//!   Array @expr{({exit_code, stdout_string, stderr_string})@}.
+//! @note
+//!   Does @b{not@} throw on non-zero exit codes — the caller decides
+//!   whether to assert on the exit code.
+//! @seealso Process.run
+array(int|string) run_process(array(string) args, void|mapping options) {
+  mapping result = Process.run(args, options || ([]));
+  return ({ result->exitcode, result->stdout || "", result->stderr || "" });
+}

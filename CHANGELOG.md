@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ReporterTests.pike` — reporter output tests
   - `RetryTests.pike` — basic retry test
 - `PUnit.pmod/Summary.pmod` — shared summary formatting for console reporters
+- `run_process()` utility function — wraps `Process.run()` to return `({exit_code, stdout, stderr})`, avoiding the `Process.Process()->status()` footgun (closes #5)
+- `PUnit.pmod/Process.pmod` — selective import module exposing `run_process`
+- `tests/RunProcessTests.pike` — 12 tests for run_process utility
 
 ### Changed
 - `TestSuite.pike` — replaced hand-rolled LCG PRNG with `Nettle.Fortuna` for deterministic shuffle (`--randomize --seed`)

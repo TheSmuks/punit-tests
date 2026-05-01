@@ -36,7 +36,7 @@ void test_add(mapping row) {
 
 ## Baseline
 
-**165 passed, 4 skipped, exit code 0**
+**177 passed, 4 skipped, exit code 0**
 
 This is the expected baseline for a clean test run:
 ```bash

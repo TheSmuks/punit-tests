@@ -6,7 +6,7 @@
 
 ## Category sub-modules (selective imports)
 
-Eight `.pmod` files provide selective imports via `import PUnit.<Category>`:
+Nine `.pmod` files provide selective imports via `import PUnit.<Category>`:
 
 | File | Category | Functions |
 |------|----------|----------|
@@ -18,6 +18,7 @@ Eight `.pmod` files provide selective imports via `import PUnit.<Category>`:
 | `Exception.pmod` | Exception | assert_throws, assert_throws_fn, assert_no_throw, assert_throws_message |
 | `Collection.pmod` | Collection | assert_each, assert_contains_only, assert_has_size |
 | `Misc.pmod` | Misc | assert_fail, assert_type, assert_approx_equal |
+| `Process.pmod` | Process | run_process |
 
 Each sub-module:
 - `inherit .Assertions` to get all assertion functions
