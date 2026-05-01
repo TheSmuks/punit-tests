@@ -3,9 +3,11 @@
 All notable changes to PUnit are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/2.0.0.html).
 
 ## [Unreleased]
+
+## [1.2.0] - 2026-05-01
 
 ### Added
 - `.editorconfig` — editor consistency for Pike, YAML, Markdown files
@@ -24,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.github/workflows/changelog-check.yml` — changelog entry requirement on PRs
 - `.github/workflows/blob-size-policy.yml` — large file rejection (> 1MB)
 - Category sub-modules for selective assertion imports (`import PUnit.Equal`, `import PUnit.Boolean`, etc.)
-- 8 sub-module files: `Equal.pmod`, `Boolean.pmod`, `Comparison.pmod`, `Null.pmod`, `Membership.pmod`, `Exception.pmod`, `Collection.pmod`, `Misc.pmod`
+- 9 sub-module files: `Equal.pmod`, `Boolean.pmod`, `Comparison.pmod`, `Null.pmod`, `Membership.pmod`, `Exception.pmod`, `Collection.pmod`, `Misc.pmod`, `Process.pmod`
 - `scripts/generate_macros.pike` — auto-generates all granular `.h` files from `Assertions.pmod`
 - `tests/SelectiveImportTests.pike` — 35 tests verifying category sub-module behavior
 - `--retry=N` flag — automatically retry failed tests up to N times
@@ -32,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Wrong-arity detection — tests with incorrect `test_data` arity are reported as errors
 - `CONTRIBUTING.md` — standard contributing guide
 - `.github/workflows/release.yml` — tag-triggered release workflow
-- Comprehensive test suite (9 new test files):
+- Comprehensive test suite (10 new test files):
   - `RetryEdgeCases.pike` — retry behavior edge cases
   - `TimeoutEdgeCases.pike` — timeout edge cases
   - `AssertThrowsEdgeCases.pike` — exception assertion edge cases
@@ -42,10 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `FilterTagTests.pike` — tag and filter tests
   - `ReporterTests.pike` — reporter output tests
   - `RetryTests.pike` — basic retry test
+  - `RunProcessTests.pike` — 12 tests for run_process utility
 - `PUnit.pmod/Summary.pmod` — shared summary formatting for console reporters
 - `run_process()` utility function — wraps `Process.run()` to return `({exit_code, stdout, stderr})`, avoiding the `Process.Process()->status()` footgun (closes #5)
 - `PUnit.pmod/Process.pmod` — selective import module exposing `run_process`
-- `tests/RunProcessTests.pike` — 12 tests for run_process utility
 
 ### Changed
 - `TestSuite.pike` — replaced hand-rolled LCG PRNG with `Nettle.Fortuna` for deterministic shuffle (`--randomize --seed`)
