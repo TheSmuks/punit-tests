@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/2.0.0.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-05-01
+
 ### Fixed
 - Renamed `PUnit.Process` to `PUnit.Subprocess` to avoid shadowing Pike's system `Process` module — no more forwarding workaround needed (fixes #6)
 
