@@ -2,4 +2,4 @@
 //!
 //! Access at runtime via @expr{PUnit.version@}.
 
-constant version = "1.2.0";
+constant version = "1.3.0";
