@@ -84,15 +84,15 @@ void test_with_stdin_option() {
 // ── Selective import ───────────────────────────────────────────────
 
 void test_selective_import() {
-  // Verify that import PUnit.Process exposes run_process
+  // Verify that import PUnit.Subprocess exposes run_process
   // We're already using `import PUnit` here, so we test
-  // that the function exists at the PUnit.Process path
-  assert_true(functionp(PUnit.Process.run_process));
+  // that the function exists at the PUnit.Subprocess path
+  assert_true(functionp(PUnit.Subprocess.run_process));
 }
 
 void test_selective_import_does_not_expose_assertions() {
-  // PUnit.Process should NOT expose assert_equal etc.
-  array available = indices(PUnit.Process);
+  // PUnit.Subprocess should NOT expose assert_equal etc.
+  array available = indices(PUnit.Subprocess);
   assert_true(!has_value(available, "assert_equal"));
   assert_true(!has_value(available, "assert_true"));
 }
